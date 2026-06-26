@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --caramel: #C87740;
+  --raisin: #2E1F26;
+  --cream: #F5ECD8;
+  --espresso: #8B5A3A;
+  --dusk: #4A3040;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--cream);
+  color: var(--raisin);
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display), serif; }
+  .font-accent  { font-family: var(--font-accent), serif; }
+}
+
+.pill-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.pill-hover:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(200, 119, 64, 0.3); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');

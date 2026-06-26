@@ -1,0 +1,1999 @@
+﻿===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\(auth)\login\page.tsx =====
+"use client";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+
+export default function LoginPage() {
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  async function sendOTP() {
+    setLoading(true); setError("");
+    const formatted = phone.startsWith("+91") ? phone : `+91${phone}`;
+    const { error } = await supabase.auth.signInWithOtp({ phone: formatted });
+    if (error) setError(error.message);
+    else setStep("otp");
+    setLoading(false);
+  }
+
+  async function verifyOTP() {
+    setLoading(true); setError("");
+    const formatted = phone.startsWith("+91") ? phone : `+91${phone}`;
+    const { error } = await supabase.auth.verifyOtp({ phone: formatted, token: otp, type: "sms" });
+    if (error) setError(error.message);
+    else router.push("/");
+    setLoading(false);
+  }
+
+  return (
+    <main className="min-h-screen bg-cream flex items-center justify-center px-6">
+      <div className="w-full max-w-sm bg-white rounded-2xl border border-espresso/20 p-8">
+        <h1 className="font-display text-3xl text-raisin mb-1">Welcome back</h1>
+        <p className="text-espresso text-sm mb-8">Sign in with your phone number</p>
+
+        {step === "phone" ? (
+          <>
+            <label className="block text-sm font-medium text-raisin mb-2">Phone number</label>
+            <div className="flex gap-2 mb-4">
+              <span className="border border-espresso/30 rounded-xl px-3 py-3 text-sm text-espresso bg-cream">+91</span>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                placeholder="9876543210" maxLength={10}
+                className="flex-1 border border-espresso/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-caramel"/>
+            </div>
+            {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
+            <button onClick={sendOTP} disabled={loading || phone.length < 10}
+              className="w-full bg-caramel text-cream py-3 rounded-full font-medium hover:bg-espresso transition-colors disabled:opacity-60">
+              {loading ? "Sending OTP..." : "Send OTP"}
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-espresso mb-4">Enter the 6-digit OTP sent to +91{phone}</p>
+            <input type="number" value={otp} onChange={(e) => setOtp(e.target.value)}
+              placeholder="123456" maxLength={6}
+              className="w-full border border-espresso/30 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:border-caramel"/>
+            {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
+            <button onClick={verifyOTP} disabled={loading || otp.length < 6}
+              className="w-full bg-caramel text-cream py-3 rounded-full font-medium hover:bg-espresso transition-colors disabled:opacity-60">
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+            <button onClick={() => setStep("phone")} className="w-full text-center text-sm text-espresso mt-3 hover:text-caramel">Change number</button>
+          </>
+        )}
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\(auth)\verify\page.tsx =====
+'use client';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import Link from 'next/link';
+
+export default function VerifyPage() {
+  const [otp, setOtp] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const savedPhone = localStorage.getItem('ph_phone');
+    if (!savedPhone) router.push('/login');
+    else setPhone(savedPhone);
+  }, [router]);
+
+  async function verifyOTP() {
+    setLoading(true);
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone,
+      token: otp,
+      type: 'sms',
+    });
+    if (error) {
+      toast.error('Invalid OTP. Please try again.');
+    } else {
+      // Upsert user record
+      await supabase.from('users').upsert({
+        id: data.user!.id,
+        phone,
+        name: '',
+        role: 'customer',
+      }, { onConflict: 'id' });
+      localStorage.removeItem('ph_phone');
+      toast.success('Logged in successfully!');
+      router.push('/');
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#2E1F26] flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <Link href="/" className="text-[#C87740] font-serif text-2xl font-bold block text-center mb-10">
+          Peppery House
+        </Link>
+        <div className="bg-[#4A3040] rounded-2xl p-8">
+          <h1 className="font-serif text-2xl font-bold text-[#F5ECD8] mb-2">Enter OTP</h1>
+          <p className="text-[#C87740]/70 text-sm mb-6">
+            Sent to <span className="text-[#C87740]">{phone}</span>
+          </p>
+          <input
+            type="text"
+            value={otp}
+            onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="6-digit OTP"
+            className="w-full bg-[#2E1F26] text-[#F5ECD8] text-center text-2xl tracking-[0.5em] rounded-xl px-4 py-4 mb-4 outline-none border border-[#C87740]/20 focus:border-[#C87740]"
+            onKeyDown={e => e.key === 'Enter' && verifyOTP()}
+          />
+          <button
+            onClick={verifyOTP}
+            disabled={loading || otp.length !== 6}
+            className="w-full btn-primary disabled:opacity-40"
+          >
+            {loading ? 'Verifying...' : 'Verify & Continue'}
+          </button>
+          <button
+            onClick={() => router.push('/login')}
+            className="w-full text-[#C87740]/50 text-sm mt-3 hover:text-[#C87740] transition-colors"
+          >
+            â† Change number
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\(public)\ai\page.tsx =====
+"use client";
+import { useState } from "react";
+
+type AIMode = "mood" | "barista" | "pairing";
+
+const DRINKS = [
+  "Espresso","Cappuccino","Latte","Flat White","Americano","Mocha",
+  "Cold Brew","Iced Latte","Frappe","Caramel Macchiato (Iced)","Vietnamese Iced Coffee","Nitro Cold Brew",
+];
+
+export default function AIPage() {
+  const [mode, setMode] = useState<AIMode>("mood");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState("");
+
+  // Mood Finder state
+  const [energy, setEnergy] = useState("medium");
+  const [taste, setTaste] = useState("sweet");
+  const [temp, setTemp] = useState("hot");
+
+  // Barista state
+  const [context, setContext] = useState("");
+
+  // Pairing state
+  const [drink, setDrink] = useState(DRINKS[0]);
+
+  async function handleSubmit() {
+    setLoading(true);
+    setResult("");
+    let endpoint = "";
+    let body = {};
+    if (mode === "mood") { endpoint = "/api/ai/mood-finder"; body = { energy, taste, temp }; }
+    else if (mode === "barista") { endpoint = "/api/ai/barista"; body = { context }; }
+    else { endpoint = "/api/ai/pairing"; body = { drink }; }
+
+    try {
+      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json();
+      setResult(data.recommendation || data.error || "Something went wrong.");
+    } catch {
+      setResult("Failed to get recommendation.");
+    }
+    setLoading(false);
+  }
+
+  return (
+    <main className="min-h-screen bg-cream">
+      <div className="max-w-2xl mx-auto px-6 py-16">
+        <p className="font-accent text-caramel italic text-lg mb-2">Powered by AI</p>
+        <h1 className="font-display text-4xl text-raisin mb-2">Your AI CafÃ© Assistant</h1>
+        <p className="text-espresso mb-10">Choose how you want a recommendation today.</p>
+
+        {/* Mode selector */}
+        <div className="flex gap-3 mb-10 flex-wrap">
+          {[
+            { key: "mood", label: "â˜• Mood Finder" },
+            { key: "barista", label: "ðŸ¤– AI Barista" },
+            { key: "pairing", label: "ðŸ° Pairing Engine" },
+          ].map((m) => (
+            <button key={m.key} onClick={() => { setMode(m.key as AIMode); setResult(""); }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${mode === m.key ? "bg-caramel text-cream" : "border border-espresso/30 text-espresso hover:border-caramel"}`}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Mood Finder */}
+        {mode === "mood" && (
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-raisin mb-2">Energy level right now?</label>
+              <div className="flex gap-3">
+                {["low","medium","high"].map(e => (
+                  <button key={e} onClick={() => setEnergy(e)}
+                    className={`flex-1 py-2 rounded-full text-sm capitalize transition-colors ${energy === e ? "bg-caramel text-cream" : "border border-espresso/30 text-espresso"}`}>{e}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-raisin mb-2">Taste preference?</label>
+              <div className="flex gap-3">
+                {["sweet","bitter","balanced"].map(t => (
+                  <button key={t} onClick={() => setTaste(t)}
+                    className={`flex-1 py-2 rounded-full text-sm capitalize transition-colors ${taste === t ? "bg-caramel text-cream" : "border border-espresso/30 text-espresso"}`}>{t}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-raisin mb-2">Feeling hot or cold?</label>
+              <div className="flex gap-3">
+                {["hot","cold"].map(t => (
+                  <button key={t} onClick={() => setTemp(t)}
+                    className={`flex-1 py-2 rounded-full text-sm capitalize transition-colors ${temp === t ? "bg-caramel text-cream" : "border border-espresso/30 text-espresso"}`}>{t}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Barista */}
+        {mode === "barista" && (
+          <div>
+            <label className="block text-sm font-medium text-raisin mb-2">Describe your vibe or situation</label>
+            <textarea
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="e.g. Late night coding session, feeling a bit tired but need to focus..."
+              className="w-full border border-espresso/30 rounded-xl p-4 text-sm bg-white text-raisin resize-none focus:outline-none focus:border-caramel"
+              rows={4}
+            />
+          </div>
+        )}
+
+        {/* Pairing Engine */}
+        {mode === "pairing" && (
+          <div>
+            <label className="block text-sm font-medium text-raisin mb-2">Pick your drink</label>
+            <select value={drink} onChange={(e) => setDrink(e.target.value)}
+              className="w-full border border-espresso/30 rounded-xl p-3 text-sm bg-white text-raisin focus:outline-none focus:border-caramel">
+              {DRINKS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        )}
+
+        <button onClick={handleSubmit} disabled={loading}
+          className="mt-6 w-full bg-caramel text-cream py-3 rounded-full font-medium hover:bg-espresso transition-colors disabled:opacity-60">
+          {loading ? "Brewing your recommendation..." : "Get Recommendation âœ¨"}
+        </button>
+
+        {result && (
+          <div className="mt-8 bg-white border border-espresso/20 rounded-2xl p-6">
+            <p className="font-accent text-caramel italic mb-2">Your AI Pick</p>
+            <p className="text-raisin leading-relaxed">{result}</p>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\(public)\menu\page.tsx =====
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { MenuItem } from "@/types";
+import Link from "next/link";
+
+const CATEGORIES = [
+  { key: "hot_coffee", label: "Hot Coffee â˜•" },
+  { key: "cold_coffee", label: "Cold Coffee ðŸ§Š" },
+  { key: "snacks", label: "Snacks ðŸ¥ª" },
+  { key: "desserts", label: "Desserts ðŸ°" },
+];
+
+export default function MenuPage() {
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [active, setActive] = useState("hot_coffee");
+  const [cart, setCart] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    async function fetchMenu() {
+      const { data } = await supabase
+        .from("menu_items")
+        .select("*, menu_categories(name)")
+        .eq("is_available", true);
+      if (data) setItems(data);
+    }
+    fetchMenu();
+  }, []);
+
+  const filtered = items.filter((i) => i.category === active);
+  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
+
+  const addToCart = (id: string) =>
+    setCart((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+
+  return (
+    <main className="min-h-screen bg-cream">
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-espresso/20">
+        <Link href="/" className="font-display text-xl text-raisin">Peppery House</Link>
+        <div className="flex items-center gap-4">
+          <Link href="/ai" className="text-sm text-caramel hover:underline">AI Picks âœ¨</Link>
+          {cartCount > 0 && (
+            <span className="bg-caramel text-cream text-sm px-3 py-1 rounded-full">
+              Cart ({cartCount})
+            </span>
+          )}
+        </div>
+      </nav>
+
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <h1 className="font-display text-4xl text-raisin mb-2">Our Menu</h1>
+        <p className="font-accent italic text-espresso mb-8">Fresh, made with love, every day.</p>
+
+        {/* Category tabs */}
+        <div className="flex gap-3 mb-8 flex-wrap">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setActive(c.key)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                active === c.key
+                  ? "bg-caramel text-cream"
+                  : "bg-white border border-espresso/20 text-espresso hover:border-caramel"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Items grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {filtered.map((item) => (
+            <div key={item.id} className="bg-white rounded-2xl border border-espresso/10 p-4 flex flex-col gap-3">
+              <div className="h-36 bg-cream rounded-xl flex items-center justify-center text-4xl">
+                {item.category === "hot_coffee" ? "â˜•" : item.category === "cold_coffee" ? "ðŸ§‹" : item.category === "snacks" ? "ðŸ¥ª" : "ðŸ°"}
+              </div>
+              <div>
+                <h3 className="font-display text-lg text-raisin">{item.name}</h3>
+                <p className="text-xs text-espresso mt-1">{item.description}</p>
+              </div>
+              <div className="flex items-center justify-between mt-auto">
+                <span className="font-medium text-caramel">â‚¹{item.price}</span>
+                <button
+                  onClick={() => addToCart(item.id)}
+                  className="bg-caramel text-cream text-sm px-3 py-1.5 rounded-full hover:bg-espresso transition-colors"
+                >
+                  {cart[item.id] ? `+${cart[item.id]} Added` : "Add"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\(public)\track\[id]\page.tsx =====
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Order, OrderStatus } from "@/types";
+
+const STATUS_STEPS: { key: OrderStatus; label: string; icon: string }[] = [
+  { key: "pending",          label: "Order Placed",     icon: "ðŸ“‹" },
+  { key: "confirmed",        label: "Confirmed",         icon: "âœ…" },
+  { key: "preparing",        label: "Preparing",         icon: "ðŸ‘¨â€ðŸ³" },
+  { key: "out_for_delivery", label: "Out for Delivery",  icon: "ðŸ›µ" },
+  { key: "delivered",        label: "Delivered",         icon: "ðŸŽ‰" },
+];
+
+export default function TrackPage({ params }: { params: { id: string } }) {
+  const [order, setOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    async function fetchOrder() {
+      const { data } = await supabase.from("orders").select("*, order_items(*, menu_items(*))").eq("id", params.id).single();
+      if (data) setOrder(data);
+    }
+    fetchOrder();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel(`order-${params.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${params.id}` },
+        (payload) => setOrder((prev) => prev ? { ...prev, ...payload.new } : null))
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [params.id]);
+
+  if (!order) return <div className="flex items-center justify-center min-h-screen text-espresso">Loading order...</div>;
+
+  const currentIdx = STATUS_STEPS.findIndex((s) => s.key === order.status);
+
+  return (
+    <main className="min-h-screen bg-cream px-6 py-16 max-w-lg mx-auto">
+      <h1 className="font-display text-3xl text-raisin mb-1">Order Tracking</h1>
+      <p className="text-espresso text-sm mb-8">Order #{order.id.slice(0, 8).toUpperCase()}</p>
+
+      {/* Status stepper */}
+      <div className="space-y-4 mb-10">
+        {STATUS_STEPS.map((step, idx) => {
+          const done = idx <= currentIdx;
+          return (
+            <div key={step.key} className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${done ? "bg-white border border-caramel/30" : "bg-white/40 border border-espresso/10"}`}>
+              <span className="text-2xl">{step.icon}</span>
+              <span className={`font-medium text-sm ${done ? "text-raisin" : "text-espresso/50"}`}>{step.label}</span>
+              {done && <span className="ml-auto text-caramel text-xs font-medium">âœ“</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Order summary */}
+      <div className="bg-white rounded-2xl border border-espresso/10 p-5">
+        <h2 className="font-display text-lg text-raisin mb-3">Order Summary</h2>
+        {order.items?.map((item) => (
+          <div key={item.id} className="flex justify-between text-sm py-1.5 border-b border-espresso/10 last:border-0">
+            <span>{item.menu_item?.name} Ã— {item.quantity}</span>
+            <span className="text-caramel">â‚¹{item.price_at_order * item.quantity}</span>
+          </div>
+        ))}
+        <div className="mt-3 pt-3 border-t border-espresso/10 space-y-1 text-sm">
+          <div className="flex justify-between text-espresso"><span>Subtotal</span><span>â‚¹{order.subtotal}</span></div>
+          <div className="flex justify-between text-espresso"><span>Delivery</span><span>{order.delivery_charge === 0 ? "Free" : `â‚¹${order.delivery_charge}`}</span></div>
+          <div className="flex justify-between text-espresso"><span>GST (5%)</span><span>â‚¹{order.gst_amount}</span></div>
+          <div className="flex justify-between font-medium text-raisin pt-1"><span>Total</span><span>â‚¹{order.total}</span></div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\admin\menu\page.tsx =====
+'use client';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { MenuItem, MenuCategory } from '@/types';
+import { Plus, Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+export default function AdminMenuPage() {
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Partial<MenuItem> | null>(null);
+
+  useEffect(() => {
+    async function fetch() {
+      const { data: cats } = await supabase.from('menu_categories').select('*').order('sort_order');
+      const { data: menuItems } = await supabase.from('menu_items').select('*, category:menu_categories(*)').order('created_at');
+      setCategories(cats || []);
+      setItems(menuItems || []);
+      setLoading(false);
+    }
+    fetch();
+  }, []);
+
+  async function toggleAvailability(item: MenuItem) {
+    const { error } = await supabase
+      .from('menu_items')
+      .update({ is_available: !item.is_available })
+      .eq('id', item.id);
+    if (!error) {
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_available: !i.is_available } : i));
+      toast.success(`${item.name} ${item.is_available ? 'hidden' : 'shown'}`);
+    }
+  }
+
+  async function saveItem(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    if (editing.id) {
+      await supabase.from('menu_items').update(editing).eq('id', editing.id);
+      setItems(prev => prev.map(i => i.id === editing.id ? { ...i, ...editing } as MenuItem : i));
+    } else {
+      const { data } = await supabase.from('menu_items').insert({ ...editing, is_available: true }).select().single();
+      if (data) setItems(prev => [...prev, data]);
+    }
+    toast.success('Menu item saved');
+    setEditing(null);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F5ECD8]">
+      <nav className="bg-[#2E1F26] px-6 py-4 flex items-center justify-between">
+        <span className="text-[#C87740] font-serif text-xl font-bold">Menu Management</span>
+        <a href="/admin" className="text-[#F5ECD8]/60 text-sm hover:text-[#C87740]">â† Dashboard</a>
+      </nav>
+
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-[#2E1F26] font-serif">Menu Items</h1>
+          <button
+            onClick={() => setEditing({ name: '', description: '', price: 0, category_id: categories[0]?.id })}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <Plus size={16} /> Add Item
+          </button>
+        </div>
+
+        {/* Edit modal */}
+        {editing && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+              <h2 className="font-serif text-xl font-bold text-[#2E1F26] mb-4">
+                {editing.id ? 'Edit Item' : 'New Item'}
+              </h2>
+              <form onSubmit={saveItem} className="space-y-4">
+                <input
+                  required
+                  placeholder="Item name"
+                  value={editing.name || ''}
+                  onChange={e => setEditing(p => ({ ...p, name: e.target.value }))}
+                  className="w-full border border-[#C87740]/20 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#C87740]"
+                />
+                <textarea
+                  placeholder="Description"
+                  value={editing.description || ''}
+                  onChange={e => setEditing(p => ({ ...p, description: e.target.value }))}
+                  className="w-full border border-[#C87740]/20 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#C87740] h-24 resize-none"
+                />
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    required
+                    placeholder="Price (â‚¹)"
+                    value={editing.price || ''}
+                    onChange={e => setEditing(p => ({ ...p, price: Number(e.target.value) }))}
+                    className="flex-1 border border-[#C87740]/20 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#C87740]"
+                  />
+                  <select
+                    value={editing.category_id || ''}
+                    onChange={e => setEditing(p => ({ ...p, category_id: e.target.value }))}
+                    className="flex-1 border border-[#C87740]/20 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#C87740]"
+                  >
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <input
+                  type="url"
+                  placeholder="Image URL (optional)"
+                  value={editing.image_url || ''}
+                  onChange={e => setEditing(p => ({ ...p, image_url: e.target.value }))}
+                  className="w-full border border-[#C87740]/20 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#C87740]"
+                />
+                <div className="flex gap-3">
+                  <button type="submit" className="flex-1 btn-primary">Save</button>
+                  <button type="button" onClick={() => setEditing(null)} className="flex-1 btn-secondary">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3">
+          {categories.map(cat => (
+            <div key={cat.id}>
+              <h2 className="font-serif font-semibold text-[#8B5A3A] mb-2 text-sm uppercase tracking-wider">{cat.name}</h2>
+              {items.filter(i => i.category_id === cat.id).map(item => (
+                <div key={item.id} className="bg-white rounded-xl px-5 py-4 border border-[#C87740]/10 flex items-center gap-4 mb-2">
+                  <div className="flex-1">
+                    <p className="font-medium text-[#2E1F26]">{item.name}</p>
+                    <p className="text-sm text-[#8B5A3A] line-clamp-1">{item.description}</p>
+                  </div>
+                  <span className="text-[#C87740] font-bold">â‚¹{item.price}</span>
+                  <button onClick={() => toggleAvailability(item)} className="text-[#C87740]">
+                    {item.is_available ? <ToggleRight size={24} /> : <ToggleLeft size={24} className="opacity-40" />}
+                  </button>
+                  <button onClick={() => setEditing(item)} className="text-[#8B5A3A] hover:text-[#C87740]">
+                    <Edit2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\admin\orders\page.tsx =====
+'use client';
+import { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Order, OrderStatus } from '@/types';
+import { ORDER_STATUS_LABELS } from '@/lib/constants';
+import toast from 'react-hot-toast';
+
+const STATUS_FLOW: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
+  preparing: 'bg-orange-100 text-orange-800',
+  out_for_delivery: 'bg-purple-100 text-purple-800',
+  delivered: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
+};
+
+export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const audioRef = useRef<AudioContext | null>(null);
+
+  function playAlert() {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.8);
+    } catch {}
+  }
+
+  useEffect(() => {
+    async function fetchOrders() {
+      const { data } = await supabase
+        .from('orders')
+        .select('*, order_items(*, menu_item:menu_items(name, price))')
+        .not('status', 'eq', 'delivered')
+        .order('created_at', { ascending: false });
+      setOrders(data || []);
+    }
+    fetchOrders();
+
+    const channel = supabase
+      .channel('live-orders')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+        setOrders(prev => [payload.new as Order, ...prev]);
+        playAlert();
+        toast.success('New order received!');
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
+        setOrders(prev => prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } : o));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  async function updateStatus(orderId: string, status: OrderStatus) {
+    await fetch(`/api/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    toast.success('Order status updated');
+  }
+
+  const nextStatus = (current: OrderStatus): OrderStatus | null => {
+    const idx = STATUS_FLOW.indexOf(current);
+    return idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F5ECD8]">
+      <nav className="bg-[#2E1F26] px-6 py-4 flex items-center justify-between">
+        <span className="text-[#C87740] font-serif text-xl font-bold">Live Orders â€” KDS</span>
+        <a href="/admin" className="text-[#F5ECD8]/60 text-sm hover:text-[#C87740]">â† Dashboard</a>
+      </nav>
+
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-[#2E1F26] font-serif">Active Orders</h1>
+          <span className="bg-[#C87740] text-white text-sm px-3 py-1 rounded-full">{orders.length} active</span>
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="text-center py-20 text-[#8B5A3A]">
+            <p className="text-lg font-serif mb-2">No active orders</p>
+            <p className="text-sm">New orders will appear here with a sound alert</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {orders.map(order => {
+              const next = nextStatus(order.status);
+              return (
+                <div key={order.id} className="bg-white rounded-2xl p-5 border border-[#C87740]/10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-mono text-sm text-[#8B5A3A]">#{order.id.slice(0, 8).toUpperCase()}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status]}`}>
+                      {ORDER_STATUS_LABELS[order.status]}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2 mb-3">
+                    <span className="text-xs bg-[#F5ECD8] text-[#8B5A3A] px-2 py-1 rounded-full capitalize">{order.type.replace('_', '-')}</span>
+                    {order.table_number && (
+                      <span className="text-xs bg-[#C87740]/10 text-[#C87740] px-2 py-1 rounded-full">Table {order.table_number}</span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 mb-3">
+                    {order.order_items?.map(oi => (
+                      <div key={oi.id} className="flex justify-between text-sm">
+                        <span className="text-[#2E1F26]">{oi.menu_item?.name} Ã— {oi.quantity}</span>
+                        <span className="text-[#8B5A3A]">â‚¹{oi.price_at_order * oi.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-[#F5ECD8] pt-3 flex items-center justify-between">
+                    <span className="font-bold text-[#C87740]">â‚¹{order.total}</span>
+                    {next && (
+                      <button
+                        onClick={() => updateStatus(order.id, next)}
+                        className="btn-primary text-xs py-2 px-4"
+                      >
+                        â†’ {ORDER_STATUS_LABELS[next]}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\admin\page.tsx =====
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Order } from "@/types";
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800",
+  confirmed: "bg-blue-100 text-blue-800",
+  preparing: "bg-purple-100 text-purple-800",
+  out_for_delivery: "bg-orange-100 text-orange-800",
+  delivered: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
+};
+
+const NEXT_STATUS: Record<string, string> = {
+  pending: "confirmed",
+  confirmed: "preparing",
+  preparing: "out_for_delivery",
+  out_for_delivery: "delivered",
+};
+
+export default function AdminDashboard() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [stats, setStats] = useState({ today: 0, revenue: 0, pending: 0 });
+
+  async function fetchOrders() {
+    const { data } = await supabase
+      .from("orders")
+      .select("*, order_items(*, menu_items(name))")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (data) {
+      setOrders(data);
+      const today = new Date().toDateString();
+      const todayOrders = data.filter((o) => new Date(o.created_at).toDateString() === today);
+      setStats({
+        today: todayOrders.length,
+        revenue: todayOrders.reduce((s, o) => s + o.total, 0),
+        pending: data.filter((o) => o.status === "pending").length,
+      });
+    }
+  }
+
+  useEffect(() => {
+    fetchOrders();
+    const channel = supabase
+      .channel("admin-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        fetchOrders();
+        // Play sound alert for new orders
+        const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA==");
+        audio.play().catch(() => {});
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  async function updateStatus(orderId: string, status: string) {
+    await fetch(`/api/orders/${orderId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    fetchOrders();
+  }
+
+  return (
+    <main className="min-h-screen bg-cream">
+      <nav className="bg-raisin text-cream px-6 py-4 flex items-center justify-between">
+        <h1 className="font-display text-xl">Peppery House â€” Admin</h1>
+        <span className="text-sm text-cream/60">Kitchen Display System</span>
+      </nav>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4 p-6">
+        {[
+          { label: "Today's Orders", value: stats.today },
+          { label: "Pending Orders", value: stats.pending },
+          { label: "Today's Revenue", value: `â‚¹${stats.revenue}` },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-2xl border border-espresso/10 p-5 text-center">
+            <div className="text-2xl font-display text-caramel">{s.value}</div>
+            <div className="text-xs text-espresso mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Live orders */}
+      <div className="px-6 pb-10">
+        <h2 className="font-display text-xl text-raisin mb-4">Live Orders</h2>
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <div key={order.id} className="bg-white rounded-2xl border border-espresso/10 p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <span className="font-medium text-raisin">#{order.id.slice(0, 8).toUpperCase()}</span>
+                  <span className="text-espresso text-sm ml-3">{order.customer_name} Â· {order.customer_phone}</span>
+                  <span className={`ml-3 text-xs px-2 py-0.5 rounded-full font-medium ${order.type === "dine_in" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"}`}>
+                    {order.type === "dine_in" ? "Dine-in" : "Delivery"}
+                  </span>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status] || ""}`}>
+                  {order.status.replace(/_/g, " ")}
+                </span>
+              </div>
+              <div className="text-sm text-espresso mb-3">
+                {order.items?.map((i) => `${i.menu_item?.name} Ã—${i.quantity}`).join(", ")}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-caramel">â‚¹{order.total}</span>
+                {NEXT_STATUS[order.status] && (
+                  <button onClick={() => updateStatus(order.id, NEXT_STATUS[order.status])}
+                    className="bg-caramel text-cream text-xs px-4 py-1.5 rounded-full hover:bg-espresso transition-colors">
+                    Mark as {NEXT_STATUS[order.status].replace(/_/g, " ")}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\admin\dashboard\route.ts =====
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+
+export async function GET() {
+  const today = new Date().toISOString().split('T')[0];
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+
+  const [todayOrders, weeklyOrders, monthlyOrders, popularItems, recentOrders] = await Promise.all([
+    supabaseAdmin.from('orders').select('total').gte('created_at', today),
+    supabaseAdmin.from('orders').select('total').gte('created_at', weekAgo),
+    supabaseAdmin.from('orders').select('total').gte('created_at', monthAgo),
+    supabaseAdmin.from('order_items')
+      .select('menu_item_id, quantity, menu_item:menu_items(id, name, price)')
+      .gte('created_at', monthAgo),
+    supabaseAdmin.from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
+
+  // Aggregate popular items
+  const itemCounts: Record<string, { item: unknown; count: number }> = {};
+  popularItems.data?.forEach(oi => {
+    const id = oi.menu_item_id;
+    if (!itemCounts[id]) itemCounts[id] = { item: oi.menu_item, count: 0 };
+    itemCounts[id].count += oi.quantity;
+  });
+  const popular_items = Object.values(itemCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  return NextResponse.json({
+    today_orders: todayOrders.data?.length || 0,
+    today_revenue: todayOrders.data?.reduce((s, o) => s + Number(o.total), 0) || 0,
+    weekly_revenue: weeklyOrders.data?.reduce((s, o) => s + Number(o.total), 0) || 0,
+    monthly_revenue: monthlyOrders.data?.reduce((s, o) => s + Number(o.total), 0) || 0,
+    popular_items,
+    recent_orders: recentOrders.data || [],
+  });
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\admin\menu\[id]\route.ts =====
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const body = await req.json();
+  const { data, error } = await supabaseAdmin
+    .from('menu_items')
+    .update(body)
+    .eq('id', params.id)
+    .select()
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ item: data });
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\ai\barista\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import { getAIBaristaRecommendation } from "@/lib/ai";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { context } = await req.json();
+    if (!context) return NextResponse.json({ error: "Missing context" }, { status: 400 });
+    const recommendation = await getAIBaristaRecommendation(context);
+    return NextResponse.json({ recommendation });
+  } catch {
+    return NextResponse.json({ error: "AI error" }, { status: 500 });
+  }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\ai\mood-finder\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import { getMoodRecommendation } from "@/lib/ai";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { energy, taste, temp } = await req.json();
+    if (!energy || !taste || !temp) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    const recommendation = await getMoodRecommendation(energy, taste, temp);
+    return NextResponse.json({ recommendation });
+  } catch {
+    return NextResponse.json({ error: "AI error" }, { status: 500 });
+  }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\ai\pairing\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import { getCoffeePairing } from "@/lib/ai";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { drink } = await req.json();
+    if (!drink) return NextResponse.json({ error: "Missing drink" }, { status: 400 });
+    const recommendation = await getCoffeePairing(drink);
+    return NextResponse.json({ recommendation });
+  } catch {
+    return NextResponse.json({ error: "AI error" }, { status: 500 });
+  }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\menu\route.ts =====
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("menu_items")
+    .select("*, menu_categories(id, name)")
+    .order("created_at");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ items: data });
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\orders\[id]\status\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
+
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { status } = await req.json();
+    const { data, error } = await supabaseAdmin
+      .from("orders")
+      .update({ status })
+      .eq("id", params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return NextResponse.json({ order: data });
+  } catch {
+    return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
+  }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\orders\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase";
+import { calculateTotal } from "@/lib/razorpay";
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { items, type, customer_name, customer_phone, address, payment_method, table_number } = body;
+
+    if (!items?.length || !customer_name || !customer_phone) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Calculate subtotal
+    const subtotal = items.reduce((sum: number, item: { price: number; quantity: number }) =>
+      sum + item.price * item.quantity, 0);
+    const { deliveryCharge, gst, total } = calculateTotal(subtotal);
+
+    // Create order
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .insert({
+        type,
+        status: "pending",
+        subtotal,
+        delivery_charge: deliveryCharge,
+        gst_amount: gst,
+        total,
+        payment_method,
+        payment_status: payment_method === "razorpay" ? "pending" : "pending",
+        customer_name,
+        customer_phone,
+        address: address || null,
+        table_number: table_number || null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Insert order items
+    const orderItems = items.map((item: { menu_item_id: string; quantity: number; price: number }) => ({
+      order_id: order.id,
+      menu_item_id: item.menu_item_id,
+      quantity: item.quantity,
+      price_at_order: item.price,
+    }));
+
+    await supabaseAdmin.from("order_items").insert(orderItems);
+
+    return NextResponse.json({ order });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const phone = searchParams.get("phone");
+  const query = supabaseAdmin.from("orders").select("*, order_items(*, menu_items(*))").order("created_at", { ascending: false });
+  if (phone) query.eq("customer_phone", phone);
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ orders: data });
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\payments\create\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import Razorpay from "razorpay";
+
+const razorpay = new Razorpay({
+  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    const { amount, orderId } = await req.json();
+    const order = await razorpay.orders.create({
+      amount: amount * 100, // paise
+      currency: "INR",
+      receipt: orderId,
+    });
+    return NextResponse.json({ razorpayOrder: order });
+  } catch {
+    return NextResponse.json({ error: "Payment initiation failed" }, { status: 500 });
+  }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\payments\verify\route.ts =====
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, order_id } = await req.json();
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    // Update order payment status
+    await supabaseAdmin
+      .from("orders")
+      .update({ payment_status: "paid", status: "confirmed" })
+      .eq("id", order_id);
+
+    await supabaseAdmin.from("payments").insert({
+      order_id,
+      razorpay_id: razorpay_payment_id,
+      method: "razorpay",
+      amount: 0,
+      status: "paid",
+    });
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+  }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\api\reviews\route.ts =====
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+export async function POST(req: NextRequest) {
+  const { user_id, menu_item_id, rating, comment } = await req.json();
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({ user_id, menu_item_id, rating, comment })
+    .select()
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ review: data }, { status: 201 });
+}
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const menuItemId = searchParams.get('menu_item_id');
+  let query = supabase.from('reviews').select('*, user:users(name)').order('created_at', { ascending: false });
+  if (menuItemId) query = query.eq('menu_item_id', menuItemId);
+  const { data } = await query;
+  return NextResponse.json(data || []);
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\public\menu\page.tsx =====
+"use client";
+import { useState, useEffect } from "react";
+import { ShoppingCart, Star, Plus, Minus, X } from "lucide-react";
+import Link from "next/link";
+import toast from "react-hot-toast";
+
+type MenuItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  is_available: boolean;
+  image_url?: string;
+};
+
+type CartItem = MenuItem & { quantity: number };
+
+const SAMPLE_MENU: MenuItem[] = [
+  // Hot Coffee
+  { id: "hc1", name: "Classic Espresso", description: "Rich, bold single shot", price: 220, category: "Hot Coffee", is_available: true },
+  { id: "hc2", name: "Caramel Latte", description: "Espresso + steamed milk + caramel drizzle", price: 280, category: "Hot Coffee", is_available: true },
+  { id: "hc3", name: "Cappuccino", description: "Espresso + thick foam + cinnamon", price: 260, category: "Hot Coffee", is_available: true },
+  { id: "hc4", name: "Filter Coffee", description: "South Indian decoction + milk", price: 200, category: "Hot Coffee", is_available: true },
+  { id: "hc5", name: "Mocha", description: "Espresso + chocolate + steamed milk", price: 290, category: "Hot Coffee", is_available: true },
+  { id: "hc6", name: "Flat White", description: "Double shot + velvety micro-foam", price: 270, category: "Hot Coffee", is_available: true },
+  // Cold Coffee
+  { id: "cc1", name: "Cold Brew", description: "12-hour steeped, smooth & strong", price: 280, category: "Cold Coffee", is_available: true },
+  { id: "cc2", name: "Iced Caramel Latte", description: "Espresso + ice + caramel milk", price: 300, category: "Cold Coffee", is_available: true },
+  { id: "cc3", name: "FrappÃ©", description: "Blended iced coffee + cream", price: 320, category: "Cold Coffee", is_available: true },
+  { id: "cc4", name: "Vietnamese Iced Coffee", description: "Strong drip + condensed milk", price: 260, category: "Cold Coffee", is_available: true },
+  { id: "cc5", name: "Mint Cold Brew", description: "Cold brew + fresh mint + sugar", price: 290, category: "Cold Coffee", is_available: true },
+  { id: "cc6", name: "Dalgona Coffee", description: "Whipped coffee over cold milk", price: 310, category: "Cold Coffee", is_available: true },
+  // Snacks
+  { id: "sn1", name: "Bruschetta", description: "Toasted bread + tomato + basil", price: 220, category: "Snacks", is_available: true },
+  { id: "sn2", name: "Chicken Sandwich", description: "Grilled chicken + lettuce + sauce", price: 280, category: "Snacks", is_available: true },
+  { id: "sn3", name: "Veg Panini", description: "Grilled panini + cheese + veggies", price: 250, category: "Snacks", is_available: true },
+  { id: "sn4", name: "Fries & Dip", description: "Crispy golden fries + aioli", price: 200, category: "Snacks", is_available: true },
+  { id: "sn5", name: "Samosa Chaat", description: "Crispy samosa + chutneys + sev", price: 210, category: "Snacks", is_available: true },
+  { id: "sn6", name: "Club Sandwich", description: "Triple-decker + chips on the side", price: 290, category: "Snacks", is_available: true },
+  // Desserts
+  { id: "ds1", name: "Chocolate Brownie", description: "Warm fudge brownie + vanilla scoop", price: 260, category: "Desserts", is_available: true },
+  { id: "ds2", name: "Cheesecake Slice", description: "New York style + berry coulis", price: 300, category: "Desserts", is_available: true },
+  { id: "ds3", name: "Tiramisu", description: "Classic Italian + espresso layers", price: 320, category: "Desserts", is_available: true },
+  { id: "ds4", name: "Belgian Waffle", description: "Crispy waffle + cream + caramel", price: 290, category: "Desserts", is_available: true },
+  { id: "ds5", name: "Gulab Jamun", description: "Soft milk dumplings + rose syrup", price: 200, category: "Desserts", is_available: true },
+  { id: "ds6", name: "CrÃ¨me BrÃ»lÃ©e", description: "Silky custard + caramelised sugar", price: 340, category: "Desserts", is_available: true },
+];
+
+const CATEGORIES = ["All", "Hot Coffee", "Cold Coffee", "Snacks", "Desserts"];
+
+export default function MenuPage() {
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  const filtered = activeCategory === "All"
+    ? SAMPLE_MENU
+    : SAMPLE_MENU.filter((i) => i.category === activeCategory);
+
+  const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
+  const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const gst = Math.round(cartTotal * 0.05);
+  const deliveryFee = cartTotal >= 299 ? 0 : 30;
+  const grandTotal = cartTotal + gst + deliveryFee;
+
+  const addToCart = (item: MenuItem) => {
+    setCart((prev) => {
+      const exists = prev.find((c) => c.id === item.id);
+      if (exists) return prev.map((c) => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c);
+      return [...prev, { ...item, quantity: 1 }];
+    });
+    toast.success(`${item.name} added to cart`);
+  };
+
+  const removeFromCart = (id: string) => {
+    setCart((prev) => {
+      const item = prev.find((c) => c.id === id);
+      if (!item) return prev;
+      if (item.quantity === 1) return prev.filter((c) => c.id !== id);
+      return prev.map((c) => c.id === id ? { ...c, quantity: c.quantity - 1 } : c);
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-cream">
+      {/* Nav */}
+      <nav className="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b border-caramel/10 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <Link href="/" className="font-display text-xl text-raisin font-bold">
+            Peppery <span className="text-caramel">House</span>
+          </Link>
+          <button
+            onClick={() => setCartOpen(true)}
+            className="relative btn-primary flex items-center gap-2"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Cart
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 w-5 h-5 bg-raisin text-cream text-xs rounded-full flex items-center justify-center font-medium">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </nav>
+
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <h1 className="section-title mb-2">Our Menu</h1>
+        <p className="font-body text-espresso mb-8">Fresh daily Â· â‚¹200â€“â‚¹400 Â· 5% GST inclusive</p>
+
+        {/* Category filter */}
+        <div className="flex gap-3 overflow-x-auto pb-2 mb-8">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded-full text-sm font-body font-medium whitespace-nowrap transition-all ${
+                activeCategory === cat
+                  ? "bg-caramel text-cream"
+                  : "bg-white/60 text-espresso border border-caramel/20 hover:border-caramel/40"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Menu grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map((item) => (
+            <div key={item.id} className="card flex flex-col justify-between gap-3 hover:shadow-md transition-shadow">
+              <div>
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="font-display text-lg text-raisin font-semibold">{item.name}</h3>
+                  <span className="badge ml-2 shrink-0">{item.category}</span>
+                </div>
+                <p className="font-body text-sm text-espresso leading-relaxed">{item.description}</p>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="font-body font-semibold text-raisin text-lg">â‚¹{item.price}</span>
+                <button
+                  onClick={() => addToCart(item)}
+                  disabled={!item.is_available}
+                  className="btn-primary !py-2 !px-4 text-sm flex items-center gap-1 disabled:opacity-40"
+                >
+                  <Plus className="w-3 h-3" /> Add
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Cart drawer */}
+      {cartOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="flex-1 bg-raisin/40" onClick={() => setCartOpen(false)} />
+          <div className="w-full max-w-sm bg-cream shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-caramel/10">
+              <h2 className="font-display text-xl text-raisin font-semibold">Your Cart</h2>
+              <button onClick={() => setCartOpen(false)} className="text-espresso hover:text-caramel transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {cart.length === 0 ? (
+                <p className="text-center text-espresso font-body py-10">Your cart is empty</p>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="font-body font-medium text-raisin text-sm">{item.name}</p>
+                      <p className="font-body text-xs text-espresso">â‚¹{item.price} each</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-full border border-caramel/30 flex items-center justify-center text-caramel hover:bg-caramel hover:text-cream transition-colors">
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="font-body font-medium text-raisin w-4 text-center">{item.quantity}</span>
+                      <button onClick={() => addToCart(item)} className="w-6 h-6 rounded-full border border-caramel/30 flex items-center justify-center text-caramel hover:bg-caramel hover:text-cream transition-colors">
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <span className="font-body font-semibold text-raisin text-sm w-16 text-right">
+                      â‚¹{item.price * item.quantity}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+            {cart.length > 0 && (
+              <div className="border-t border-caramel/10 px-6 py-4 space-y-2">
+                <div className="flex justify-between font-body text-sm text-espresso">
+                  <span>Subtotal</span><span>â‚¹{cartTotal}</span>
+                </div>
+                <div className="flex justify-between font-body text-sm text-espresso">
+                  <span>GST (5%)</span><span>â‚¹{gst}</span>
+                </div>
+                <div className="flex justify-between font-body text-sm text-espresso">
+                  <span>Delivery</span>
+                  <span>{deliveryFee === 0 ? <span className="text-green-600">Free</span> : `â‚¹${deliveryFee}`}</span>
+                </div>
+                <div className="flex justify-between font-body font-semibold text-raisin text-base pt-2 border-t border-caramel/10">
+                  <span>Total</span><span>â‚¹{grandTotal}</span>
+                </div>
+                <Link
+                  href="/customer/orders"
+                  className="btn-primary w-full text-center block mt-3"
+                  onClick={() => setCartOpen(false)}
+                >
+                  Proceed to checkout
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\globals.css =====
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --caramel: #C87740;
+  --raisin: #2E1F26;
+  --cream: #F5ECD8;
+  --espresso: #8B5A3A;
+  --dusk: #4A3040;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--cream);
+  color: var(--raisin);
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display), serif; }
+  .font-accent  { font-family: var(--font-accent), serif; }
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\layout.tsx =====
+import type { Metadata } from "next";
+import { DM_Sans, Playfair_Display, Cormorant_Garamond } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "react-hot-toast";
+
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-display" });
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "600"],
+  variable: "--font-accent",
+});
+
+export const metadata: Metadata = {
+  title: "Peppery House â€” Cozy Indie CafÃ©",
+  description: "A warm, cozy cafÃ© experience with great coffee, snacks & desserts. Order online or visit us for dine-in.",
+  keywords: ["cafe", "coffee", "dine-in", "delivery", "India"],
+  openGraph: {
+    title: "Peppery House",
+    description: "Great coffee. Warm vibes.",
+    type: "website",
+  },
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className={`${dmSans.variable} ${playfair.variable} ${cormorant.variable} font-sans bg-cream text-raisin`}>
+        <Toaster position="top-center" />
+        {children}
+      </body>
+    </html>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\app\page.tsx =====
+import Link from "next/link";
+
+export default function HomePage() {
+  return (
+    <main className="min-h-screen bg-cream">
+      {/* Navbar */}
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-espresso/20">
+        <h1 className="font-display text-2xl text-raisin tracking-wide">Peppery House</h1>
+        <div className="flex gap-6 text-sm text-espresso">
+          <Link href="/menu" className="hover:text-caramel transition-colors">Menu</Link>
+          <Link href="/ai" className="hover:text-caramel transition-colors">AI Picks</Link>
+          <Link href="/login" className="bg-caramel text-cream px-4 py-1.5 rounded-full hover:bg-espresso transition-colors">Sign In</Link>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="flex flex-col items-center justify-center text-center px-6 py-24 gap-6">
+        <p className="font-accent text-caramel text-lg tracking-widest uppercase">Welcome to</p>
+        <h2 className="font-display text-6xl md:text-7xl text-raisin leading-tight">
+          Peppery House
+        </h2>
+        <p className="text-espresso text-lg max-w-md font-accent italic">
+          Where every cup tells a story. Cozy dine-in, swift delivery, and AI-picked favourites just for you.
+        </p>
+        <div className="flex gap-4 mt-4">
+          <Link href="/menu" className="bg-caramel text-cream px-6 py-3 rounded-full font-medium hover:bg-espresso transition-colors">
+            Order Now
+          </Link>
+          <Link href="/ai" className="border border-caramel text-caramel px-6 py-3 rounded-full font-medium hover:bg-caramel hover:text-cream transition-colors">
+            AI Picks âœ¨
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 pb-20 max-w-5xl mx-auto">
+        {[
+          { icon: "â˜•", title: "Hot & Cold Coffee", desc: "6 hot brews, 6 chilled sips â€” crafted with care." },
+          { icon: "ðŸ°", title: "Snacks & Desserts", desc: "Perfect pairings for every mood and moment." },
+          { icon: "ðŸ¤–", title: "AI Barista", desc: "Tell us your vibe, we'll pick your perfect order." },
+        ].map((f) => (
+          <div key={f.title} className="bg-white/60 border border-espresso/20 rounded-2xl p-6">
+            <div className="text-3xl mb-3">{f.icon}</div>
+            <h3 className="font-display text-xl text-raisin mb-2">{f.title}</h3>
+            <p className="text-espresso text-sm">{f.desc}</p>
+          </div>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\hooks\useAuth.ts =====
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+
+export function useAuth() {
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = () => supabase.auth.signOut();
+
+  return { user, loading, signOut };
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\hooks\useCart.ts =====
+"use client";
+import { useState, useCallback } from "react";
+import type { MenuItem, CartItem } from "@/types";
+
+export function useCart() {
+  const [items, setItems] = useState<CartItem[]>([]);
+
+  const addItem = useCallback((menuItem: MenuItem) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.menu_item.id === menuItem.id);
+      if (existing) {
+        return prev.map((i) => i.menu_item.id === menuItem.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, { menu_item: menuItem, quantity: 1 }];
+    });
+  }, []);
+
+  const removeItem = useCallback((id: string) => {
+    setItems((prev) => prev.filter((i) => i.menu_item.id !== id));
+  }, []);
+
+  const updateQty = useCallback((id: string, quantity: number) => {
+    if (quantity <= 0) { removeItem(id); return; }
+    setItems((prev) => prev.map((i) => i.menu_item.id === id ? { ...i, quantity } : i));
+  }, [removeItem]);
+
+  const clear = useCallback(() => setItems([]), []);
+
+  const subtotal = items.reduce((s, i) => s + i.menu_item.price * i.quantity, 0);
+  const count = items.reduce((s, i) => s + i.quantity, 0);
+
+  return { items, addItem, removeItem, updateQty, clear, subtotal, count };
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\lib\ai.ts =====
+// Claude AI helper functions
+
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+
+const MENU_CONTEXT = `
+Peppery House Menu:
+HOT COFFEE: Espresso, Cappuccino, Latte, Flat White, Americano, Mocha
+COLD COFFEE: Cold Brew, Iced Latte, Frappe, Caramel Macchiato (Iced), Vietnamese Iced Coffee, Nitro Cold Brew
+SNACKS: Bruschetta, Cheese Toast, Veg Sandwich, Chicken Sandwich, Nachos, French Fries
+DESSERTS: Chocolate Lava Cake, Tiramisu, Cheesecake, Brownie, Panna Cotta, Waffles
+Price range: â‚¹200â€“â‚¹400 per item.
+`;
+
+async function callClaude(prompt: string): Promise<string> {
+  const res = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 400,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  const data = await res.json();
+  return data.content?.[0]?.text ?? "Sorry, couldn't get a recommendation right now.";
+}
+
+export async function getMoodRecommendation(energy: string, taste: string, temp: string): Promise<string> {
+  return callClaude(
+    `You are the AI barista at Peppery House cafÃ©. Based on the customer's mood, recommend ONE drink from the menu.\n${MENU_CONTEXT}\nCustomer mood: Energy level: ${energy}, Taste preference: ${taste}, Temperature preference: ${temp}.\nReply in 2-3 sentences max. Name the drink first, then give a warm reason why it suits them.`
+  );
+}
+
+export async function getAIBaristaRecommendation(context: string): Promise<string> {
+  return callClaude(
+    `You are the AI Barista at Peppery House cafÃ© â€” warm, witty, and knowledgeable. The customer described their situation: "${context}"\n${MENU_CONTEXT}\nRecommend 1 coffee AND 1 food item (snack or dessert) that perfectly fits their vibe. Keep it conversational and fun â€” 3-4 sentences max.`
+  );
+}
+
+export async function getCoffeePairing(drink: string): Promise<string> {
+  return callClaude(
+    `You are the pairing expert at Peppery House cafÃ©. The customer chose: ${drink}.\n${MENU_CONTEXT}\nRecommend 2 food items (from snacks or desserts) that pair perfectly with this drink. For each, give a one-sentence reason. Keep it warm and appetising.`
+  );
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\lib\constants.ts =====
+export const BRAND = {
+  name: 'Peppery House',
+  tagline: 'Brewed with love, served with warmth',
+  colors: {
+    caramel: '#C87740',
+    raisin: '#2E1F26',
+    cream: '#F5ECD8',
+    espresso: '#8B5A3A',
+    dusk: '#4A3040',
+  },
+  fonts: {
+    heading: 'Playfair Display',
+    body: 'DM Sans',
+    accent: 'Cormorant Garamond',
+  },
+};
+
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: 'Order Placed',
+  confirmed: 'Confirmed',
+  preparing: 'Preparing',
+  ready: 'Ready for Pickup',
+  out_for_delivery: 'Out for Delivery',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+};
+
+export const ORDER_STATUS_STEPS = [
+  'pending',
+  'confirmed',
+  'preparing',
+  'out_for_delivery',
+  'delivered',
+];
+
+export const GST_RATE = 0.05;
+export const DELIVERY_CHARGE = 30;
+export const FREE_DELIVERY_ABOVE = 299;
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\lib\razorpay.ts =====
+// Razorpay utility functions
+
+export function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+export interface RazorpayOptions {
+  key: string;
+  amount: number; // paise
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
+  prefill?: { name?: string; contact?: string };
+  theme?: { color?: string };
+}
+
+export function openRazorpay(options: RazorpayOptions) {
+  // @ts-ignore
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+}
+
+export function calculateTotal(subtotal: number): {
+  subtotal: number;
+  deliveryCharge: number;
+  gst: number;
+  total: number;
+} {
+  const deliveryCharge = subtotal >= 299 ? 0 : 30;
+  const gst = Math.round(subtotal * 0.05);
+  const total = subtotal + deliveryCharge + gst;
+  return { subtotal, deliveryCharge, gst, total };
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\lib\supabase.ts =====
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Server-side client (for API routes)
+export const supabaseAdmin = createClient(
+  supabaseUrl,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\types\index.ts =====
+export type UserRole = "customer" | "admin";
+
+export interface User {
+  id: string;
+  phone: string;
+  name: string;
+  email?: string;
+  role: UserRole;
+  created_at: string;
+}
+
+export type MenuCategory = "hot_coffee" | "cold_coffee" | "snacks" | "desserts";
+
+export interface MenuItem {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url?: string;
+  is_available: boolean;
+  created_at: string;
+  category?: MenuCategory;
+}
+
+export interface CartItem {
+  menu_item: MenuItem;
+  quantity: number;
+}
+
+export type OrderType = "dine_in" | "delivery";
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export type PaymentMethod = "razorpay" | "cash_on_delivery" | "cash_at_counter" | "qr_code";
+
+export interface Order {
+  id: string;
+  user_id?: string;
+  type: OrderType;
+  status: OrderStatus;
+  table_number?: string;
+  subtotal: number;
+  delivery_charge: number;
+  gst_amount: number;
+  total: number;
+  payment_method: PaymentMethod;
+  payment_status: "pending" | "paid";
+  address?: string;
+  customer_name: string;
+  customer_phone: string;
+  created_at: string;
+  items?: OrderItem[];
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  menu_item_id: string;
+  quantity: number;
+  price_at_order: number;
+  menu_item?: MenuItem;
+}
+
+export interface Review {
+  id: string;
+  user_id: string;
+  menu_item_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+  user?: User;
+}
+
+export interface DeliveryAgent {
+  id: string;
+  name: string;
+  phone: string;
+  is_active: boolean;
+  current_order_id?: string;
+}
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\middleware.ts =====
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // Protect admin routes
+  if (req.nextUrl.pathname.startsWith("/admin")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    // Check admin role
+    const { data: user } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (!user || user.role !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  return res;
+}
+
+export const config = {
+  matcher: ["/admin/:path*", "/customer/:path*"],
+};
+
+===== C:\Users\shashank gupta\Desktop\resources\AnantaCode\New folder\peppery-house-fixed\peppery-house\supabase-schema.sql =====
+-- =============================================
+-- PEPPERY HOUSE â€” Supabase PostgreSQL Schema
+-- Run this in your Supabase SQL Editor
+-- =============================================
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Users table (synced with Supabase Auth)
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  phone TEXT UNIQUE NOT NULL,
+  name TEXT,
+  email TEXT,
+  role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Menu categories
+CREATE TABLE IF NOT EXISTS menu_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  sort_order INT DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insert default categories
+INSERT INTO menu_categories (name, slug, sort_order) VALUES
+  ('Hot Coffee', 'hot_coffee', 1),
+  ('Cold Coffee', 'cold_coffee', 2),
+  ('Snacks', 'snacks', 3),
+  ('Desserts', 'desserts', 4)
+ON CONFLICT (slug) DO NOTHING;
+
+-- Menu items
+CREATE TABLE IF NOT EXISTS menu_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES menu_categories(id) ON DELETE SET NULL,
+  category TEXT, -- denormalized for easier querying
+  name TEXT NOT NULL,
+  description TEXT,
+  price NUMERIC(10, 2) NOT NULL,
+  image_url TEXT,
+  is_available BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insert sample menu items
+INSERT INTO menu_items (category_id, category, name, description, price) VALUES
+  ((SELECT id FROM menu_categories WHERE slug='hot_coffee'), 'hot_coffee', 'Espresso', 'Pure, bold shot of premium arabica', 220),
+  ((SELECT id FROM menu_categories WHERE slug='hot_coffee'), 'hot_coffee', 'Cappuccino', 'Espresso with velvety steamed milk foam', 260),
+  ((SELECT id FROM menu_categories WHERE slug='hot_coffee'), 'hot_coffee', 'Latte', 'Smooth espresso with lots of steamed milk', 280),
+  ((SELECT id FROM menu_categories WHERE slug='hot_coffee'), 'hot_coffee', 'Flat White', 'Stronger than a latte, silky microfoam', 270),
+  ((SELECT id FROM menu_categories WHERE slug='hot_coffee'), 'hot_coffee', 'Americano', 'Espresso diluted with hot water', 230),
+  ((SELECT id FROM menu_categories WHERE slug='hot_coffee'), 'hot_coffee', 'Mocha', 'Espresso, chocolate & steamed milk', 300),
+  ((SELECT id FROM menu_categories WHERE slug='cold_coffee'), 'cold_coffee', 'Cold Brew', '18-hour steeped, smooth & strong', 290),
+  ((SELECT id FROM menu_categories WHERE slug='cold_coffee'), 'cold_coffee', 'Iced Latte', 'Chilled espresso over ice with milk', 280),
+  ((SELECT id FROM menu_categories WHERE slug='cold_coffee'), 'cold_coffee', 'Frappe', 'Blended iced coffee, creamy & sweet', 310),
+  ((SELECT id FROM menu_categories WHERE slug='cold_coffee'), 'cold_coffee', 'Caramel Macchiato (Iced)', 'Vanilla, milk, espresso & caramel drizzle', 340),
+  ((SELECT id FROM menu_categories WHERE slug='cold_coffee'), 'cold_coffee', 'Vietnamese Iced Coffee', 'Strong drip coffee with condensed milk', 270),
+  ((SELECT id FROM menu_categories WHERE slug='cold_coffee'), 'cold_coffee', 'Nitro Cold Brew', 'Nitrogen-infused silky cold brew', 320),
+  ((SELECT id FROM menu_categories WHERE slug='snacks'), 'snacks', 'Bruschetta', 'Toasted bread with tomato & basil', 220),
+  ((SELECT id FROM menu_categories WHERE slug='snacks'), 'snacks', 'Cheese Toast', 'Thick-cut bread with melted cheddar', 200),
+  ((SELECT id FROM menu_categories WHERE slug='snacks'), 'snacks', 'Veg Sandwich', 'Fresh veggies in toasted multigrain', 240),
+  ((SELECT id FROM menu_categories WHERE slug='snacks'), 'snacks', 'Chicken Sandwich', 'Grilled chicken, lettuce & pesto', 290),
+  ((SELECT id FROM menu_categories WHERE slug='snacks'), 'snacks', 'Nachos', 'Crispy nachos with salsa & sour cream', 260),
+  ((SELECT id FROM menu_categories WHERE slug='snacks'), 'snacks', 'French Fries', 'Golden crispy fries with dips', 220),
+  ((SELECT id FROM menu_categories WHERE slug='desserts'), 'desserts', 'Chocolate Lava Cake', 'Warm molten centre, served with ice cream', 340),
+  ((SELECT id FROM menu_categories WHERE slug='desserts'), 'desserts', 'Tiramisu', 'Classic Italian coffee-soaked dessert', 320),
+  ((SELECT id FROM menu_categories WHERE slug='desserts'), 'desserts', 'Cheesecake', 'New York-style, smooth & creamy', 300),
+  ((SELECT id FROM menu_categories WHERE slug='desserts'), 'desserts', 'Brownie', 'Fudgy dark chocolate brownie', 250),
+  ((SELECT id FROM menu_categories WHERE slug='desserts'), 'desserts', 'Panna Cotta', 'Italian vanilla cream with berry coulis', 280),
+  ((SELECT id FROM menu_categories WHERE slug='desserts'), 'desserts', 'Waffles', 'Belgian waffles with maple & cream', 310);
+
+-- Orders
+CREATE TABLE IF NOT EXISTS orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  type TEXT NOT NULL CHECK (type IN ('dine_in', 'delivery')),
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','confirmed','preparing','out_for_delivery','delivered','cancelled')),
+  table_number TEXT,
+  subtotal NUMERIC(10, 2) NOT NULL,
+  delivery_charge NUMERIC(10, 2) DEFAULT 0,
+  gst_amount NUMERIC(10, 2) DEFAULT 0,
+  total NUMERIC(10, 2) NOT NULL,
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('razorpay','cash_on_delivery','cash_at_counter','qr_code')),
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending','paid')),
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  address TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Order items
+CREATE TABLE IF NOT EXISTS order_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
+  quantity INT NOT NULL CHECK (quantity > 0),
+  price_at_order NUMERIC(10, 2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Payments
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  razorpay_id TEXT,
+  method TEXT,
+  amount NUMERIC(10, 2),
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Reviews
+CREATE TABLE IF NOT EXISTS reviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  menu_item_id UUID REFERENCES menu_items(id) ON DELETE CASCADE,
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, menu_item_id)
+);
+
+-- Delivery agents
+CREATE TABLE IF NOT EXISTS delivery_agents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  phone TEXT UNIQUE NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  current_order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+CREATE POLICY "Users can read own data" ON users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Public can read menu" ON menu_items FOR SELECT USING (TRUE);
+CREATE POLICY "Public can read categories" ON menu_categories FOR SELECT USING (TRUE);
+CREATE POLICY "Anyone can create orders" ON orders FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Users can read own orders" ON orders FOR SELECT USING (customer_phone = (SELECT phone FROM users WHERE id = auth.uid()) OR auth.uid() IS NOT NULL);
+
+-- Enable Realtime for orders table
+ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+
