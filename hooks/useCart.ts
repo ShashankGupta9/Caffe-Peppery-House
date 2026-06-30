@@ -1,33 +1,54 @@
 "use client";
-import { useState, useCallback } from "react";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { MenuItem, CartItem } from "@/types";
 
-export function useCart() {
-  const [items, setItems] = useState<CartItem[]>([]);
-
-  const addItem = useCallback((menuItem: MenuItem) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.menu_item.id === menuItem.id);
-      if (existing) {
-        return prev.map((i) => i.menu_item.id === menuItem.id ? { ...i, quantity: i.quantity + 1 } : i);
-      }
-      return [...prev, { menu_item: menuItem, quantity: 1 }];
-    });
-  }, []);
-
-  const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((i) => i.menu_item.id !== id));
-  }, []);
-
-  const updateQty = useCallback((id: string, quantity: number) => {
-    if (quantity <= 0) { removeItem(id); return; }
-    setItems((prev) => prev.map((i) => i.menu_item.id === id ? { ...i, quantity } : i));
-  }, [removeItem]);
-
-  const clear = useCallback(() => setItems([]), []);
-
-  const subtotal = items.reduce((s, i) => s + i.menu_item.price * i.quantity, 0);
-  const count = items.reduce((s, i) => s + i.quantity, 0);
-
-  return { items, addItem, removeItem, updateQty, clear, subtotal, count };
+interface CartState {
+  items: CartItem[];
+  addItem: (menuItem: MenuItem) => void;
+  removeItem: (id: string) => void;
+  updateQty: (id: string, quantity: number) => void;
+  clear: () => void;
+  subtotal: () => number;
+  count: () => number;
 }
+
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      addItem: (menuItem) => set((state) => {
+        const existing = state.items.find((i) => i.menu_item.id === menuItem.id);
+        if (existing) {
+          return {
+            items: state.items.map((i) => 
+              i.menu_item.id === menuItem.id 
+                ? { ...i, quantity: i.quantity + 1 } 
+                : i
+            )
+          };
+        }
+        return { items: [...state.items, { menu_item: menuItem, quantity: 1 }] };
+      }),
+      removeItem: (id) => set((state) => ({
+        items: state.items.filter((i) => i.menu_item.id !== id)
+      })),
+      updateQty: (id, quantity) => set((state) => {
+        if (quantity <= 0) {
+          return { items: state.items.filter((i) => i.menu_item.id !== id) };
+        }
+        return {
+          items: state.items.map((i) => 
+            i.menu_item.id === id ? { ...i, quantity } : i
+          )
+        };
+      }),
+      clear: () => set({ items: [] }),
+      subtotal: () => get().items.reduce((s, i) => s + (i.menu_item.price * i.quantity), 0),
+      count: () => get().items.reduce((s, i) => s + i.quantity, 0),
+    }),
+    {
+      name: 'peppery-cart-storage',
+    }
+  )
+);

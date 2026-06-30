@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { DM_Sans, Playfair_Display, Cormorant_Garamond } from "next/font/google";
+import { DM_Sans, Playfair_Display, Cormorant_Garamond, Caveat } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 
@@ -9,6 +10,14 @@ const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "600"],
   variable: "--font-accent",
+});
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-hand",
+});
+const graenMetal = localFont({
+  src: "../public/fonts/GraenMetal-Regular.otf",
+  variable: "--font-graen",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +34,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${playfair.variable} ${cormorant.variable} font-sans bg-cream text-raisin`}>
+      <body className={`${dmSans.variable} ${playfair.variable} ${cormorant.variable} ${graenMetal.variable} ${caveat.variable} font-sans bg-cream text-raisin`}>
         <Toaster position="top-center" />
         {children}
       </body>

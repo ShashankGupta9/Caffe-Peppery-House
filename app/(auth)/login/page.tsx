@@ -1,70 +1,106 @@
-"use client";
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+"use client"
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { createClient } from '@/lib/supabase/client'
+import toast from 'react-hot-toast'
+import { Loader2 } from 'lucide-react'
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/'
+  
+  const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClient()
 
-  async function sendOTP() {
-    setLoading(true); setError("");
-    const formatted = phone.startsWith("+91") ? phone : `+91${phone}`;
-    const { error } = await supabase.auth.signInWithOtp({ phone: formatted });
-    if (error) setError(error.message);
-    else setStep("otp");
-    setLoading(false);
-  }
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema)
+  })
 
-  async function verifyOTP() {
-    setLoading(true); setError("");
-    const formatted = phone.startsWith("+91") ? phone : `+91${phone}`;
-    const { error } = await supabase.auth.verifyOtp({ phone: formatted, token: otp, type: "sms" });
-    if (error) setError(error.message);
-    else router.push("/");
-    setLoading(false);
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    })
+
+    if (error) {
+      setIsLoading(false)
+      toast.error(error.message)
+      return
+    }
+
+    toast.success("Successfully logged in!")
+    router.push(redirect)
+    router.refresh()
   }
 
   return (
-    <main className="min-h-screen bg-cream flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-2xl border border-espresso/20 p-8">
-        <h1 className="font-display text-3xl text-raisin mb-1">Welcome back</h1>
-        <p className="text-espresso text-sm mb-8">Sign in with your phone number</p>
-
-        {step === "phone" ? (
-          <>
-            <label className="block text-sm font-medium text-raisin mb-2">Phone number</label>
-            <div className="flex gap-2 mb-4">
-              <span className="border border-espresso/30 rounded-xl px-3 py-3 text-sm text-espresso bg-cream">+91</span>
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                placeholder="9876543210" maxLength={10}
-                className="flex-1 border border-espresso/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-caramel"/>
+    <div className="min-h-screen bg-surface flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-surface-container-low p-8 rounded-2xl shadow-xl border border-outline-variant/30">
+        <div className="text-center">
+          <Link href="/" className="font-serif text-3xl font-bold text-primary">Peppery House</Link>
+          <h2 className="mt-6 text-2xl font-bold text-on-surface font-serif">Welcome back</h2>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Please sign in to your account
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-on-surface mb-1">Email address</label>
+              <input
+                {...register("email")}
+                type="email"
+                className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-on-surface"
+                placeholder="you@example.com"
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
             </div>
-            {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
-            <button onClick={sendOTP} disabled={loading || phone.length < 10}
-              className="w-full bg-caramel text-cream py-3 rounded-full font-medium hover:bg-espresso transition-colors disabled:opacity-60">
-              {loading ? "Sending OTP..." : "Send OTP"}
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-espresso mb-4">Enter the 6-digit OTP sent to +91{phone}</p>
-            <input type="number" value={otp} onChange={(e) => setOtp(e.target.value)}
-              placeholder="123456" maxLength={6}
-              className="w-full border border-espresso/30 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:border-caramel"/>
-            {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
-            <button onClick={verifyOTP} disabled={loading || otp.length < 6}
-              className="w-full bg-caramel text-cream py-3 rounded-full font-medium hover:bg-espresso transition-colors disabled:opacity-60">
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-            <button onClick={() => setStep("phone")} className="w-full text-center text-sm text-espresso mt-3 hover:text-caramel">Change number</button>
-          </>
-        )}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-on-surface">Password</label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:text-caramel">
+                  Forgot password?
+                </Link>
+              </div>
+              <input
+                {...register("password")}
+                type="password"
+                className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-on-surface"
+                placeholder="••••••••"
+              />
+              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-on-primary bg-primary hover:bg-caramel focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50"
+          >
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Sign in'}
+          </button>
+        </form>
+
+        <p className="mt-4 text-center text-sm text-on-surface-variant">
+          Don't have an account?{' '}
+          <Link href={`/signup?redirect=${redirect}`} className="font-medium text-primary hover:text-caramel transition-colors">
+            Sign up
+          </Link>
+        </p>
       </div>
-    </main>
-  );
+    </div>
+  )
 }

@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useCartStore } from "@/hooks/useCart";
+import { MOCK_MENU_ITEMS } from "@/lib/mockData";
+import ProductCard from "@/components/ProductCard";
 
 type AIMode = "mood" | "barista" | "pairing";
 
@@ -137,6 +140,7 @@ export default function AIPage() {
   const [mode, setMode] = useState<AIMode>("mood");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
+  const [recommendedItems, setRecommendedItems] = useState<any[]>([]);
 
   const [energy, setEnergy] = useState("medium");
   const [taste, setTaste] = useState("sweet");
@@ -157,9 +161,21 @@ export default function AIPage() {
     try {
       const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
-      setResult(data.recommendation || data.error || "Something went wrong.");
+      const responseText = data.recommendation || data.error || "Something went wrong.";
+      setResult(responseText);
+      
+      const matches = [...responseText.matchAll(/\*\*(.*?)\*\*/g)].map(m => m[1]);
+      if (matches.length > 0) {
+        const found = MOCK_MENU_ITEMS.filter(item => 
+          matches.some(m => item.name.toLowerCase().includes(m.toLowerCase()) || m.toLowerCase().includes(item.name.toLowerCase()))
+        );
+        setRecommendedItems(found);
+      } else {
+        setRecommendedItems([]);
+      }
     } catch {
       setResult("Failed to get recommendation.");
+      setRecommendedItems([]);
     }
     setLoading(false);
   }
@@ -170,26 +186,7 @@ export default function AIPage() {
       
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Navigation */}
-        <header className="bg-surface/90 backdrop-blur-md fixed top-0 w-full border-b border-outline-variant/10 shadow-sm z-50">
-          <div className="flex justify-between items-center px-8 md:px-12 py-4 w-full max-w-7xl mx-auto">
-            <Link className="font-serif text-2xl font-semibold text-primary tracking-tight" href="/">
-              Peppery Caffe
-            </Link>
-            <nav className="hidden md:flex gap-8">
-              <Link className="font-medium text-sm text-on-surface-variant hover:text-primary transition-colors" href="/menu">Roastery</Link>
-              <Link className="font-medium text-sm text-on-surface-variant hover:text-primary transition-colors" href="/menu">Subscriptions</Link>
-              <Link className="font-medium text-sm text-on-surface-variant hover:text-primary transition-colors" href="/ai">Experience</Link>
-            </nav>
-            <div className="flex items-center gap-5 text-primary">
-              <Link href="/menu" className="hover:text-secondary transition-all hover:scale-110">
-                <span className="material-symbols-outlined">shopping_bag</span>
-              </Link>
-              <Link href="/login" className="hover:text-secondary transition-all hover:scale-110">
-                <span className="material-symbols-outlined">person</span>
-              </Link>
-            </div>
-          </div>
-        </header>
+
 
         {/* Main Content */}
         <main className="flex-grow pt-32 pb-20 flex justify-center items-center px-6">
@@ -294,7 +291,7 @@ export default function AIPage() {
               disabled={loading}
               className="w-full max-w-2xl bg-primary hover:bg-opacity-90 text-on-primary py-5 rounded-4xl font-bold text-xl transition-all hover:scale-[1.02] shadow-[0_10px_25px_-5px_rgba(200,119,64,0.4)] mb-16 flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {loading ? "Brewing Recommendation ✨..." : "Brew Recommendation ✨"}
+              {loading ? "Brewing Recommendation ..." : "Brew Recommendation "}
             </button>
 
             {result && (
@@ -318,6 +315,17 @@ export default function AIPage() {
                   <span className="material-symbols-outlined text-sm">star</span>
                   <span className="material-symbols-outlined text-sm">star</span>
                   <span className="material-symbols-outlined text-sm">star</span>
+                </div>
+              </div>
+            )}
+
+            {recommendedItems.length > 0 && (
+              <div className="w-full max-w-4xl mt-12">
+                <h3 className="text-center font-serif text-3xl font-bold mb-8">Add to Cart</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center">
+                  {recommendedItems.map((item, idx) => (
+                    <ProductCard key={idx} item={item} />
+                  ))}
                 </div>
               </div>
             )}

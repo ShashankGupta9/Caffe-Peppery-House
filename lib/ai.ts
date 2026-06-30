@@ -22,7 +22,7 @@ async function callGemini(prompt: string): Promise<string> {
     return "Please set the GEMINI_API_KEY in your environment variables to enable AI recommendations.";
   }
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);       // this line is retuning the output
     return result.response.text();                            // this line is also retuning the output
   } catch (error) {

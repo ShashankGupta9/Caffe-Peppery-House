@@ -57,7 +57,7 @@ export default function TrackPage({ params }: { params: { id: string } }) {
       {/* Order summary */}
       <div className="bg-white rounded-2xl border border-espresso/10 p-5">
         <h2 className="font-display text-lg text-raisin mb-3">Order Summary</h2>
-        {order.items?.map((item) => (
+        {order.order_items?.map((item) => (
           <div key={item.id} className="flex justify-between text-sm py-1.5 border-b border-espresso/10 last:border-0">
             <span>{item.menu_item?.name} × {item.quantity}</span>
             <span className="text-caramel">₹{item.price_at_order * item.quantity}</span>

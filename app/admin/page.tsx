@@ -1,124 +1,156 @@
-"use client";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import type { Order } from "@/types";
+"use client"
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  preparing: "bg-purple-100 text-purple-800",
-  out_for_delivery: "bg-orange-100 text-orange-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
-};
-
-const NEXT_STATUS: Record<string, string> = {
-  pending: "confirmed",
-  confirmed: "preparing",
-  preparing: "out_for_delivery",
-  out_for_delivery: "delivered",
-};
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getDashboardStats, getSalesData, getAIInsights } from '@/lib/admin/adminServices'
+import { IndianRupee, ShoppingBag, Users, TrendingUp, Sparkles } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { Badge } from '@/components/ui/badge'
 
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState({ today: 0, revenue: 0, pending: 0 });
-
-  async function fetchOrders() {
-    const { data } = await supabase
-      .from("orders")
-      .select("*, order_items(*, menu_items(name))")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (data) {
-      setOrders(data);
-      const today = new Date().toDateString();
-      const todayOrders = data.filter((o) => new Date(o.created_at).toDateString() === today);
-      setStats({
-        today: todayOrders.length,
-        revenue: todayOrders.reduce((s, o) => s + o.total, 0),
-        pending: data.filter((o) => o.status === "pending").length,
-      });
-    }
-  }
+  const [stats, setStats] = useState<any>(null)
+  const [sales, setSales] = useState<any>(null)
+  const [insights, setInsights] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchOrders();
-    const channel = supabase
-      .channel("admin-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        fetchOrders();
-        // Play sound alert for new orders
-        const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA==");
-        audio.play().catch(() => {});
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+    async function loadData() {
+      const [s, sd, i] = await Promise.all([
+        getDashboardStats(),
+        getSalesData(),
+        getAIInsights()
+      ])
+      setStats(s)
+      setSales(sd)
+      setInsights(i)
+      setLoading(false)
+    }
+    loadData()
+  }, [])
 
-  async function updateStatus(orderId: string, status: string) {
-    await fetch(`/api/orders/${orderId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    fetchOrders();
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-10 w-48 bg-surface-container-high rounded"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-surface-container-low rounded-xl border border-outline-variant/30"></div>)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="h-96 lg:col-span-2 bg-surface-container-low rounded-xl border border-outline-variant/30"></div>
+          <div className="h-96 bg-surface-container-low rounded-xl border border-outline-variant/30"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <main className="min-h-screen bg-cream">
-      <nav className="bg-raisin text-cream px-6 py-4 flex items-center justify-between">
-        <h1 className="font-display text-xl">Peppery House — Admin</h1>
-        <span className="text-sm text-cream/60">Kitchen Display System</span>
-      </nav>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 p-6">
-        {[
-          { label: "Today's Orders", value: stats.today },
-          { label: "Pending Orders", value: stats.pending },
-          { label: "Today's Revenue", value: `₹${stats.revenue}` },
-        ].map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-espresso/10 p-5 text-center">
-            <div className="text-2xl font-display text-caramel">{s.value}</div>
-            <div className="text-xs text-espresso mt-1">{s.label}</div>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold font-serif text-on-surface">Overview</h1>
+        <p className="text-on-surface-variant">Here's what's happening at Peppery House today.</p>
       </div>
 
-      {/* Live orders */}
-      <div className="px-6 pb-10">
-        <h2 className="font-display text-xl text-raisin mb-4">Live Orders</h2>
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-2xl border border-espresso/10 p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <span className="font-medium text-raisin">#{order.id.slice(0, 8).toUpperCase()}</span>
-                  <span className="text-espresso text-sm ml-3">{order.customer_name} · {order.customer_phone}</span>
-                  <span className={`ml-3 text-xs px-2 py-0.5 rounded-full font-medium ${order.type === "dine_in" ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800"}`}>
-                    {order.type === "dine_in" ? "Dine-in" : "Delivery"}
-                  </span>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status] || ""}`}>
-                  {order.status.replace(/_/g, " ")}
-                </span>
-              </div>
-              <div className="text-sm text-espresso mb-3">
-                {order.items?.map((i) => `${i.menu_item?.name} ×${i.quantity}`).join(", ")}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-caramel">₹{order.total}</span>
-                {NEXT_STATUS[order.status] && (
-                  <button onClick={() => updateStatus(order.id, NEXT_STATUS[order.status])}
-                    className="bg-caramel text-cream text-xs px-4 py-1.5 rounded-full hover:bg-espresso transition-colors">
-                    Mark as {NEXT_STATUS[order.status].replace(/_/g, " ")}
-                  </button>
-                )}
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-on-surface-variant">Today's Revenue</CardTitle>
+            <IndianRupee size={16} className="text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-on-surface">₹{stats.todayRevenue.toLocaleString()}</div>
+            <p className="text-xs text-green-400 mt-1 flex items-center">
+              <TrendingUp size={12} className="mr-1" /> +{stats.revenueGrowth}% from yesterday
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-on-surface-variant">Total Orders</CardTitle>
+            <ShoppingBag size={16} className="text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-on-surface">{stats.totalOrders}</div>
+            <p className="text-xs text-green-400 mt-1 flex items-center">
+              <TrendingUp size={12} className="mr-1" /> +{stats.ordersGrowth}% from yesterday
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-on-surface-variant">Customers</CardTitle>
+            <Users size={16} className="text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-on-surface">{stats.totalCustomers}</div>
+            <p className="text-xs text-green-400 mt-1 flex items-center">
+              <TrendingUp size={12} className="mr-1" /> +{stats.customersGrowth}% from yesterday
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-on-surface-variant">Avg Order Value</CardTitle>
+            <TrendingUp size={16} className="text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-on-surface">₹{stats.averageOrderValue}</div>
+            <p className="text-xs text-red-400 mt-1 flex items-center">
+               {stats.aovGrowth}% from yesterday
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Sales Today</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={sales} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#51453e" vertical={false} />
+                  <XAxis dataKey="time" stroke="#9e8d83" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#9e8d83" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#2B1D16', borderColor: '#51453e', color: '#F7F3EE' }}
+                    itemStyle={{ color: '#c87740' }}
+                  />
+                  <Line type="monotone" dataKey="revenue" stroke="#c87740" strokeWidth={3} dot={{ r: 4, fill: '#c87740' }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-          ))}
-        </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-surface-container border-primary/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Sparkles size={120} />
+          </div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-caramel">
+              <Sparkles size={18} /> AI Assistant Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {insights.map((insight: any, i: number) => (
+              <div key={i} className="bg-surface-container-low p-4 rounded-lg border border-outline-variant/50">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-sm text-on-surface">{insight.title}</h4>
+                  <Badge variant={insight.type === 'warning' ? 'destructive' : insight.type === 'suggestion' ? 'secondary' : 'default'}>
+                    {insight.type}
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant leading-relaxed">{insight.message}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
-    </main>
-  );
+    </div>
+  )
 }
