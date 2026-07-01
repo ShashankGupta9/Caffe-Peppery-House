@@ -26,7 +26,7 @@ export default function AdminAnalytics() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-serif text-on-surface">Analytics</h1>
+        <h1 className="text-3xl font-bold font-display text-on-surface">Analytics</h1>
         <p className="text-on-surface-variant">Deep dive into your café's performance.</p>
       </div>
 
@@ -117,3 +117,4 @@ export default function AdminAnalytics() {
     </div>
   )
 }
+

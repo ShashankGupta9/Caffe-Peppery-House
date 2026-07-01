@@ -10,7 +10,7 @@ export default function AdminStaff() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-on-surface">Staff Management</h1>
+          <h1 className="text-3xl font-bold font-display text-on-surface">Staff Management</h1>
           <p className="text-on-surface-variant">Manage team members and roles.</p>
         </div>
         <Button><Plus size={16} className="mr-2" /> Add Staff</Button>
@@ -53,3 +53,4 @@ export default function AdminStaff() {
     </div>
   )
 }
+

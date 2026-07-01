@@ -49,7 +49,7 @@ export default function Sidebar() {
     >
       <div className="h-16 flex items-center justify-between px-4 border-b border-outline-variant/30">
         {isSidebarOpen && (
-          <Link href="/" className="font-serif text-xl font-bold tracking-tight text-primary truncate flex-1">
+          <Link href="/" className="font-display text-xl font-bold tracking-tight text-primary truncate flex-1">
             Peppery House
           </Link>
         )}
@@ -100,7 +100,15 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-outline-variant/30">
-        <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors">
+        <button 
+          onClick={async () => {
+            const { createClient } = await import('@/lib/supabase/client')
+            const supabase = createClient()
+            await supabase.auth.signOut()
+            window.location.href = '/admin/login'
+          }}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"
+        >
           <LogOut size={20} />
           {isSidebarOpen && <span>Sign Out</span>}
         </button>
@@ -108,3 +116,4 @@ export default function Sidebar() {
     </aside>
   )
 }
+

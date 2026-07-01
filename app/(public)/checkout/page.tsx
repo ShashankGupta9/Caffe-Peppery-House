@@ -155,55 +155,55 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="text-center">
-          <h2 className="text-2xl font-serif text-on-surface">Your Cart is Empty</h2>
-          <button onClick={() => router.push('/menu')} className="mt-4 text-primary hover:underline">Go to Menu</button>
+          <h2 className="text-4xl font-display text-raisin font-bold mb-6">Your Cart is Empty</h2>
+          <button onClick={() => router.push('/menu')} className="border border-raisin text-raisin px-12 py-4 tracking-widest uppercase font-bold hover:bg-raisin hover:text-white transition-colors">Go to Menu</button>
         </div>
       </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-surface px-6 py-12">
+    <main className="min-h-screen bg-surface px-6 py-24">
       <div className="max-w-4xl mx-auto">
-        <h1 className="font-serif text-4xl text-on-surface font-bold mb-8 border-b border-outline-variant/30 pb-4">Checkout</h1>
+        <h1 className="font-display text-5xl text-raisin font-bold mb-16 border-b border-outline-variant pb-8">Checkout</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
           {/* Address Form */}
-          <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
-            <h2 className="text-xl font-bold font-serif text-on-surface mb-6">Delivery Details</h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="bg-surface p-8 sm:p-12 border border-outline-variant">
+            <h2 className="text-2xl font-bold font-display text-raisin mb-8">Delivery Details</h2>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Full Name</label>
-                <input {...register("fullName")} className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-primary outline-none" />
-                {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName.message}</p>}
+                <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Full Name</label>
+                <input {...register("fullName")} className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant" />
+                {errors.fullName && <p className="text-xs text-red-500 mt-2">{errors.fullName.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Phone Number</label>
-                <input {...register("phone")} className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-primary outline-none" />
-                {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
+                <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Phone Number</label>
+                <input {...register("phone")} className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant" />
+                {errors.phone && <p className="text-xs text-red-500 mt-2">{errors.phone.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Street Address</label>
-                <input {...register("street")} className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-primary outline-none" />
-                {errors.street && <p className="text-xs text-red-500 mt-1">{errors.street.message}</p>}
+                <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Street Address</label>
+                <input {...register("street")} className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant" />
+                {errors.street && <p className="text-xs text-red-500 mt-2">{errors.street.message}</p>}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-8">
                 <div>
-                  <label className="block text-sm font-medium text-on-surface mb-1">City</label>
-                  <input {...register("city")} className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-primary outline-none" />
-                  {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city.message}</p>}
+                  <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">City</label>
+                  <input {...register("city")} className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant" />
+                  {errors.city && <p className="text-xs text-red-500 mt-2">{errors.city.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-on-surface mb-1">Pincode</label>
-                  <input {...register("pincode")} className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-primary outline-none" />
-                  {errors.pincode && <p className="text-xs text-red-500 mt-1">{errors.pincode.message}</p>}
+                  <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Pincode</label>
+                  <input {...register("pincode")} className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant" />
+                  {errors.pincode && <p className="text-xs text-red-500 mt-2">{errors.pincode.message}</p>}
                 </div>
               </div>
 
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full mt-6 bg-primary text-on-primary py-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-opacity-90 disabled:opacity-50 transition-all"
+                className="w-full mt-10 bg-raisin text-white py-4 tracking-widest uppercase text-xs font-bold flex justify-center items-center gap-2 hover:bg-opacity-90 disabled:opacity-50 transition-all border border-raisin"
               >
                 {loading ? <Loader2 className="animate-spin" /> : "Pay via Razorpay"}
               </button>
@@ -211,17 +211,17 @@ export default function CheckoutPage() {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/30 shadow-sm h-fit sticky top-24">
-            <h2 className="text-xl font-bold font-serif text-on-surface mb-6">Order Summary</h2>
-            <div className="space-y-4 mb-6">
+          <div className="bg-surface p-8 sm:p-12 border border-outline-variant h-fit sticky top-32">
+            <h2 className="text-2xl font-bold font-display text-raisin mb-8">Order Summary</h2>
+            <div className="space-y-6 mb-8 font-light text-raisin">
               {items.map(item => (
-                <div key={item.menu_item.id} className="flex justify-between text-sm text-on-surface-variant">
+                <div key={item.menu_item.id} className="flex justify-between">
                   <span>{item.quantity}x {item.menu_item.name}</span>
-                  <span>₹{item.menu_item.price * item.quantity}</span>
+                  <span className="font-bold">₹{item.menu_item.price * item.quantity}</span>
                 </div>
               ))}
             </div>
-            <div className="border-t border-outline-variant/30 pt-4 space-y-2 text-sm text-on-surface-variant font-medium">
+            <div className="border-t border-outline-variant pt-6 space-y-4 font-light text-raisin">
               <div className="flex justify-between">
                 <span>Subtotal</span>
                 <span>₹{subtotal()}</span>
@@ -235,9 +235,9 @@ export default function CheckoutPage() {
                 <span>₹{deliveryCharge}</span>
               </div>
             </div>
-            <div className="border-t border-outline-variant/30 pt-4 mt-4 flex justify-between text-lg font-bold text-on-surface">
+            <div className="border-t border-outline-variant pt-6 mt-6 flex justify-between text-xl font-bold text-raisin">
               <span>Total</span>
-              <span className="text-primary">₹{total}</span>
+              <span>₹{total}</span>
             </div>
           </div>
         </div>
@@ -245,3 +245,4 @@ export default function CheckoutPage() {
     </main>
   )
 }
+

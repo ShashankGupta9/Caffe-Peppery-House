@@ -71,7 +71,7 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-surface px-6 py-12">
       <div className="max-w-2xl mx-auto">
-        <h1 className="font-serif text-4xl text-on-surface font-bold mb-8">My Profile</h1>
+        <h1 className="font-display text-4xl text-on-surface font-bold mb-8">My Profile</h1>
         
         {loading ? (
           <div className="flex justify-center py-12">
@@ -135,3 +135,4 @@ export default function ProfilePage() {
     </main>
   )
 }
+

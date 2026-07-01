@@ -46,7 +46,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-serif text-on-surface">Overview</h1>
+        <h1 className="text-3xl font-bold font-display text-on-surface">Overview</h1>
         <p className="text-on-surface-variant">Here's what's happening at Peppery House today.</p>
       </div>
 
@@ -154,3 +154,4 @@ export default function AdminDashboard() {
     </div>
   )
 }
+

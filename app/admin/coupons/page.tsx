@@ -11,7 +11,7 @@ export default function AdminCoupons() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-on-surface">Coupons & Offers</h1>
+          <h1 className="text-3xl font-bold font-display text-on-surface">Coupons & Offers</h1>
           <p className="text-on-surface-variant">Manage promotional codes and discounts.</p>
         </div>
         <Button><Plus size={16} className="mr-2" /> Create Coupon</Button>
@@ -55,3 +55,4 @@ export default function AdminCoupons() {
     </div>
   )
 }
+

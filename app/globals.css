@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --caramel: #C87740;
-  --raisin: #2E1F26;
-  --cream: #F5ECD8;
-  --espresso: #8B5A3A;
-  --dusk: #4A3040;
+  --aureolin: #fbe311;
+  --bistre: #261606;
+  --caramel: #004b36;
+  --raisin: #111111;
+  --cream: #ffffff;
+  --espresso: #111111;
+  --dusk: #111111;
 }
 
 * { box-sizing: border-box; }

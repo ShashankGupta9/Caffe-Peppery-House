@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Coffee } from 'lucide-react'
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
@@ -21,7 +21,7 @@ const signupSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupSchema>
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/'
@@ -64,7 +64,7 @@ export default function SignupPage() {
           <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-3xl">mail</span>
           </div>
-          <h2 className="text-2xl font-bold text-on-surface font-serif">Check your email</h2>
+          <h2 className="text-2xl font-bold text-on-surface font-display">Check your email</h2>
           <p className="text-on-surface-variant">
             We've sent a verification link to your email address. Please verify your email to continue.
           </p>
@@ -77,75 +77,86 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12">
-      <div className="max-w-md w-full space-y-8 bg-surface-container-low p-8 rounded-2xl shadow-xl border border-outline-variant/30">
+    <div className="min-h-screen bg-surface flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-24">
+      <div className="max-w-md w-full space-y-8 bg-surface p-8 sm:p-12 border border-outline-variant">
         <div className="text-center">
-          <Link href="/" className="font-serif text-3xl font-bold text-primary">Peppery House</Link>
-          <h2 className="mt-6 text-2xl font-bold text-on-surface font-serif">Create an account</h2>
-          <p className="mt-2 text-sm text-on-surface-variant">
+          <Link href="/" className="flex justify-center items-center gap-3 text-raisin hover:opacity-80 transition-opacity">
+            <Coffee size={36} />
+            <span className="font-display text-4xl font-bold tracking-tight uppercase">Peppery House</span>
+          </Link>
+          <h2 className="mt-8 text-2xl font-bold text-raisin font-display">Create an account</h2>
+          <p className="mt-2 text-sm text-on-surface-variant font-light">
             Join us for a premium coffee experience
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1">Full Name</label>
+              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Full Name</label>
               <input
                 {...register("fullName")}
                 type="text"
-                className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-on-surface"
+                className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant"
                 placeholder="John Doe"
               />
-              {errors.fullName && <p className="mt-1 text-xs text-red-400">{errors.fullName.message}</p>}
+              {errors.fullName && <p className="mt-2 text-xs text-red-500">{errors.fullName.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1">Email address</label>
+              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Email address</label>
               <input
                 {...register("email")}
                 type="email"
-                className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-on-surface"
+                className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant"
                 placeholder="you@example.com"
               />
-              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+              {errors.email && <p className="mt-2 text-xs text-red-500">{errors.email.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1">Password</label>
+              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Password</label>
               <input
                 {...register("password")}
                 type="password"
-                className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-on-surface"
+                className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant"
                 placeholder="••••••••"
               />
-              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+              {errors.password && <p className="mt-2 text-xs text-red-500">{errors.password.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-on-surface mb-1">Confirm Password</label>
+              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Confirm Password</label>
               <input
                 {...register("confirmPassword")}
                 type="password"
-                className="w-full px-4 py-2 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-on-surface"
+                className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant"
                 placeholder="••••••••"
               />
-              {errors.confirmPassword && <p className="mt-1 text-xs text-red-400">{errors.confirmPassword.message}</p>}
+              {errors.confirmPassword && <p className="mt-2 text-xs text-red-500">{errors.confirmPassword.message}</p>}
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-on-primary bg-primary hover:bg-caramel focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50"
+            className="w-full flex justify-center py-4 px-4 border border-raisin text-sm font-bold tracking-widest uppercase text-white bg-raisin hover:bg-white hover:text-raisin transition-colors disabled:opacity-50 mt-8"
           >
             {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Create account'}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-on-surface-variant">
+        <p className="mt-6 text-center text-sm text-on-surface-variant">
           Already have an account?{' '}
-          <Link href={`/login?redirect=${redirect}`} className="font-medium text-primary hover:text-caramel transition-colors">
+          <Link href={`/login?redirect=${redirect}`} className="font-bold tracking-widest uppercase text-xs text-raisin hover:underline transition-colors ml-2">
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface flex flex-col justify-center items-center"><Loader2 className="animate-spin text-raisin" size={48} /></div>}>
+      <SignupForm />
+    </Suspense>
   )
 }

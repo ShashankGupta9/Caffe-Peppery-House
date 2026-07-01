@@ -21,7 +21,7 @@ export default function AdminReviews() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-serif text-on-surface">Reviews</h1>
+        <h1 className="text-3xl font-bold font-display text-on-surface">Reviews</h1>
         <p className="text-on-surface-variant">Manage customer feedback and ratings.</p>
       </div>
 
@@ -67,3 +67,4 @@ export default function AdminReviews() {
     </div>
   )
 }
+

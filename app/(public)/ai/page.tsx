@@ -193,8 +193,8 @@ export default function AIPage() {
           <div className="max-w-3xl w-full flex flex-col items-center">
             
             <div className="text-center mb-12 w-full">
-              <p className="font-serif italic text-secondary text-lg mb-2">Artisanal Curation</p>
-              <h1 className="font-serif text-5xl md:text-6xl text-on-surface font-semibold mb-4">Brewed Just for You</h1>
+              <p className="font-display italic text-secondary text-lg mb-2">Artisanal Curation</p>
+              <h1 className="font-display text-5xl md:text-6xl text-on-surface font-semibold mb-4">Brewed Just for You</h1>
               <p className="text-on-surface-variant text-lg max-w-lg mx-auto opacity-90">Discover the perfect brew for your present moment.</p>
             </div>
 
@@ -222,7 +222,7 @@ export default function AIPage() {
               {mode === "mood" && (
                 <>
                   <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/20 shadow-xl">
-                    <label className="block text-secondary font-serif italic text-lg mb-4">What's your energy level?</label>
+                    <label className="block text-secondary font-display italic text-lg mb-4">What's your energy level?</label>
                     <div className="grid grid-cols-3 gap-4">
                       {["low", "medium", "high"].map(e => (
                         <button key={e} onClick={() => setEnergy(e)}
@@ -234,7 +234,7 @@ export default function AIPage() {
                   </div>
                   
                   <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/20 shadow-xl">
-                    <label className="block text-secondary font-serif italic text-lg mb-4">Cravings for taste?</label>
+                    <label className="block text-secondary font-display italic text-lg mb-4">Cravings for taste?</label>
                     <div className="grid grid-cols-3 gap-4">
                       {["sweet", "bitter", "balanced"].map(t => (
                         <button key={t} onClick={() => setTaste(t)}
@@ -246,7 +246,7 @@ export default function AIPage() {
                   </div>
 
                   <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/20 shadow-xl">
-                    <label className="block text-secondary font-serif italic text-lg mb-4">Ideal temperature?</label>
+                    <label className="block text-secondary font-display italic text-lg mb-4">Ideal temperature?</label>
                     <div className="grid grid-cols-2 gap-4">
                       {["hot", "cold"].map(t => (
                         <button key={t} onClick={() => setTemp(t)}
@@ -261,7 +261,7 @@ export default function AIPage() {
 
               {mode === "barista" && (
                 <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/20 shadow-xl">
-                  <label className="block text-secondary font-serif italic text-lg mb-4">Describe your vibe or situation</label>
+                  <label className="block text-secondary font-display italic text-lg mb-4">Describe your vibe or situation</label>
                   <textarea
                     value={context}
                     onChange={(e) => setContext(e.target.value)}
@@ -274,7 +274,7 @@ export default function AIPage() {
 
               {mode === "pairing" && (
                 <div className="bg-surface-container rounded-3xl p-6 border border-outline-variant/20 shadow-xl">
-                  <label className="block text-secondary font-serif italic text-lg mb-4">Pick your drink</label>
+                  <label className="block text-secondary font-display italic text-lg mb-4">Pick your drink</label>
                   <select 
                     value={drink} 
                     onChange={(e) => setDrink(e.target.value)}
@@ -299,7 +299,7 @@ export default function AIPage() {
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-60"></div>
                 <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-60"></div>
                 <div className="inline-block mb-4 px-4 py-1 border border-secondary/40 rounded-full">
-                  <span className="font-serif italic text-secondary text-sm uppercase tracking-widest">Our Expert Selection</span>
+                  <span className="font-display italic text-secondary text-sm uppercase tracking-widest">Our Expert Selection</span>
                 </div>
                 
                 <div className="relative z-10">
@@ -321,7 +321,7 @@ export default function AIPage() {
 
             {recommendedItems.length > 0 && (
               <div className="w-full max-w-4xl mt-12">
-                <h3 className="text-center font-serif text-3xl font-bold mb-8">Add to Cart</h3>
+                <h3 className="text-center font-display text-3xl font-bold mb-8">Add to Cart</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-center">
                   {recommendedItems.map((item, idx) => (
                     <ProductCard key={idx} item={item} />
@@ -336,3 +336,4 @@ export default function AIPage() {
     </div>
   );
 }
+

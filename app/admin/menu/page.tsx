@@ -13,7 +13,7 @@ export default function AdminMenu() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-on-surface">Menu Management</h1>
+          <h1 className="text-3xl font-bold font-display text-on-surface">Menu Management</h1>
           <p className="text-on-surface-variant">Add, edit, or remove products from your menu.</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -47,7 +47,7 @@ export default function AdminMenu() {
             </div>
             <CardContent className="p-4 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-serif text-lg font-bold text-on-surface leading-tight">{item.name}</h3>
+                <h3 className="font-display text-lg font-bold text-on-surface leading-tight">{item.name}</h3>
                 <span className="font-bold text-primary whitespace-nowrap">₹{item.price}</span>
               </div>
               <p className="text-sm text-on-surface-variant line-clamp-2 mb-4 flex-1">{item.description}</p>
@@ -62,3 +62,4 @@ export default function AdminMenu() {
     </div>
   )
 }
+

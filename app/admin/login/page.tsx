@@ -1,13 +1,12 @@
 "use client"
-import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
-import { Loader2, Coffee } from 'lucide-react'
+import { Loader2, ShieldAlert } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -16,11 +15,8 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-function LoginForm() {
+export default function AdminLoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
-  
   const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
 
@@ -30,54 +26,74 @@ function LoginForm() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
+    
+    // 1. Authenticate with Supabase
+    const { error, data: authData } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     })
 
-    if (error) {
+    if (error || !authData.user) {
       setIsLoading(false)
-      toast.error(error.message)
+      toast.error(error?.message || 'Authentication failed')
       return
     }
 
-    toast.success("Successfully logged in!")
-    router.push(redirect)
+    // 2. Verify Role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (profileError) {
+      console.error("Profile fetch error:", profileError)
+      setIsLoading(false)
+      await supabase.auth.signOut()
+      toast.error(`Profile Error: ${profileError.message} (Is the profiles table empty?)`)
+      return
+    }
+
+    if (!profile || profile.role !== 'admin') {
+      console.error("Unauthorized role:", profile?.role)
+      setIsLoading(false)
+      await supabase.auth.signOut()
+      toast.error(`Unauthorized: Your current role is '${profile?.role || 'none'}', not 'admin'.`)
+      return
+    }
+
+    toast.success("Welcome back, Administrator")
+    router.push('/admin')
     router.refresh()
   }
 
   return (
     <div className="min-h-screen bg-surface flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-surface p-8 sm:p-12 border border-outline-variant">
-        <div className="text-center">
-          <Link href="/" className="flex justify-center items-center gap-3 text-raisin hover:opacity-80 transition-opacity">
-            <Coffee size={36} />
-            <span className="font-display text-4xl font-bold tracking-tight uppercase">Peppery House</span>
-          </Link>
-          <h2 className="mt-8 text-2xl font-bold text-raisin font-display">Welcome back</h2>
+      <div className="max-w-md w-full space-y-8 bg-surface p-8 sm:p-12 border border-outline-variant shadow-sm">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6">
+            <ShieldAlert size={32} className="text-raisin" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-raisin tracking-widest uppercase">Admin Portal</h1>
           <p className="mt-2 text-sm text-on-surface-variant font-light">
-            Please sign in to your account
+            Secure administrative access only.
           </p>
         </div>
+        
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-6">
             <div>
-              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Email address</label>
+              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Admin Email</label>
               <input
                 {...register("email")}
                 type="email"
                 className="w-full px-0 py-3 bg-transparent border-0 border-b border-outline-variant focus:ring-0 focus:border-raisin transition-all outline-none text-raisin font-light placeholder-outline-variant"
-                placeholder="you@example.com"
+                placeholder="admin@pepperyhouse.com"
               />
               {errors.email && <p className="mt-2 text-xs text-red-500">{errors.email.message}</p>}
             </div>
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold tracking-widest uppercase text-raisin">Password</label>
-                <Link href="/forgot-password" className="text-xs text-on-surface-variant hover:text-raisin transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
+              <label className="block text-xs font-bold tracking-widest uppercase text-raisin mb-2">Password</label>
               <input
                 {...register("password")}
                 type="password"
@@ -93,25 +109,10 @@ function LoginForm() {
             disabled={isLoading}
             className="w-full flex justify-center py-4 px-4 border border-raisin text-sm font-bold tracking-widest uppercase text-white bg-raisin hover:bg-white hover:text-raisin transition-colors disabled:opacity-50 mt-8"
           >
-            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Sign in'}
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Secure Login'}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-on-surface-variant">
-          Don't have an account?{' '}
-          <Link href={`/signup?redirect=${redirect}`} className="font-bold tracking-widest uppercase text-xs text-raisin hover:underline transition-colors ml-2">
-            Sign up
-          </Link>
-        </p>
       </div>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-surface flex flex-col justify-center items-center"><Loader2 className="animate-spin text-raisin" size={48} /></div>}>
-      <LoginForm />
-    </Suspense>
   )
 }

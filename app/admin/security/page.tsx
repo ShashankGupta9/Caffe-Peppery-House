@@ -8,7 +8,7 @@ export default function AdminSecurity() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold font-serif text-on-surface">Security & Logs</h1>
+        <h1 className="text-3xl font-bold font-display text-on-surface">Security & Logs</h1>
         <p className="text-on-surface-variant">Monitor system activity and logins.</p>
       </div>
 
@@ -61,3 +61,4 @@ export default function AdminSecurity() {
     </div>
   )
 }
+

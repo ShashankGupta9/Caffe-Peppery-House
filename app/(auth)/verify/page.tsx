@@ -44,11 +44,11 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen bg-[#2E1F26] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <Link href="/" className="text-[#C87740] font-serif text-2xl font-bold block text-center mb-10">
+        <Link href="/" className="text-[#C87740] font-display text-2xl font-bold block text-center mb-10">
           Peppery House
         </Link>
         <div className="bg-[#4A3040] rounded-2xl p-8">
-          <h1 className="font-serif text-2xl font-bold text-[#F5ECD8] mb-2">Enter OTP</h1>
+          <h1 className="font-display text-2xl font-bold text-[#F5ECD8] mb-2">Enter OTP</h1>
           <p className="text-[#C87740]/70 text-sm mb-6">
             Sent to <span className="text-[#C87740]">{phone}</span>
           </p>
@@ -78,3 +78,4 @@ export default function VerifyPage() {
     </div>
   );
 }
+

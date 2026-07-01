@@ -65,14 +65,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Admin routes temporarily bypassed
-  /*
+  // Secure Admin Route Protection
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    if (!user) return NextResponse.redirect(new URL('/login', request.url));
+    // 1. Handle the admin login page specifically
+    if (request.nextUrl.pathname === '/admin/login') {
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile && profile.role === 'admin') {
+          return NextResponse.redirect(new URL('/admin', request.url));
+        }
+      }
+      return response;
+    }
+
+    // 2. Unauthenticated users trying to access protected admin pages
+    if (!user) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+
+    // 3. Authenticated users: Check role
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!profile || profile.role !== 'admin') return NextResponse.redirect(new URL('/', request.url));
+    
+    if (!profile || profile.role !== 'admin') {
+      // 4. If logged in as a normal customer, boot them back to the public site
+      return NextResponse.redirect(new URL('/', request.url));
+    }
   }
-  */
 
   return response
 }

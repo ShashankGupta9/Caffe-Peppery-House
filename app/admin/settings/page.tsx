@@ -8,7 +8,7 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold font-serif text-on-surface">Settings</h1>
+        <h1 className="text-3xl font-bold font-display text-on-surface">Settings</h1>
         <p className="text-on-surface-variant">Manage your café's general information and configurations.</p>
       </div>
 
@@ -58,3 +58,4 @@ export default function AdminSettings() {
     </div>
   )
 }
+

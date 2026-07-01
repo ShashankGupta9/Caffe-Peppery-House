@@ -23,7 +23,7 @@ export default function AdminAIAssistant() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-serif text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 flex items-center gap-3">
+          <h1 className="text-3xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 flex items-center gap-3">
             <Bot className="text-blue-400" size={32} /> AI Inventory Assistant
           </h1>
           <p className="text-on-surface-variant mt-1">Powered by Gemini. Predictive analysis and smart recommendations.</p>
@@ -95,3 +95,4 @@ export default function AdminAIAssistant() {
     </div>
   )
 }
+
