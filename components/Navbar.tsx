@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import UserDropdown from './UserDropdown';
 import { useCartSync } from '@/hooks/useCartSync';
+import { ShoppingCart } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -90,11 +91,12 @@ export default function Navbar() {
           {/* Cart Icon */}
           <Link 
             href="/cart"
-            className="relative flex items-center justify-center p-2 hover:text-primary transition-colors text-on-surface"
+            className="relative flex items-center justify-center gap-2 p-2 hover:text-primary transition-colors text-on-surface text-sm font-medium tracking-widest uppercase"
           >
-            <span className="material-symbols-outlined">shopping_cart</span>
+            <ShoppingCart size={20} />
+            <span>Cart</span>
             {mounted && cartCount > 0 && (
-              <div className="absolute -top-1 -right-1 bg-primary text-on-primary text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">
+              <div className="absolute -top-2 -right-2 bg-primary text-on-primary text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">
                 {cartCount}
               </div>
             )}

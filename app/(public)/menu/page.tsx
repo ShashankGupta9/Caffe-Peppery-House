@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { MenuItem } from "@/types";
 import ProductCard from "@/components/ProductCard";
+import MenuHero from "@/components/MenuHero";
+import { PackageOpen } from 'lucide-react';
 import { MOCK_MENU_ITEMS } from "@/lib/mockData";
 
 const CATEGORIES = [
@@ -21,7 +23,7 @@ export default function MenuPage() {
       const { data, error } = await supabase
         .from("menu_items")
         .select("*, menu_categories(name)")
-        .eq("is_available", true);
+        .order("category");
         
       if (data && data.length > 0) {
         setItems(data);
@@ -36,14 +38,9 @@ export default function MenuPage() {
   const activeItems = items.filter((item) => item.category === active);
 
   return (
-    <main className="min-h-screen bg-surface px-6 py-24">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-24">
-          <h1 className="font-display text-5xl md:text-7xl text-raisin font-bold mb-6">Our Menu</h1>
-          <p className="text-on-surface-variant text-lg max-w-2xl mx-auto font-light">
-            Discover our artisanal collection of freshly roasted coffee, delightful snacks, and decadent desserts.
-          </p>
-        </div>
+    <main className="min-h-screen bg-surface">
+      <MenuHero />
+      <div className="max-w-7xl mx-auto px-6 py-24">
 
         {/* Category Tabs */}
         <div className="flex flex-wrap justify-center gap-8 mb-20 border-b border-outline-variant pb-4">
@@ -72,9 +69,9 @@ export default function MenuPage() {
               <ProductCard key={item.id} item={item} />
             ))
           ) : (
-            <div className="col-span-full text-center py-24 text-on-surface-variant">
-              <span className="material-symbols-outlined text-6xl mb-4 opacity-50">inventory_2</span>
-              <p className="text-xl font-light">Loading delicious items...</p>
+            <div className="col-span-full flex flex-col items-center justify-center py-24 text-on-surface-variant">
+              <PackageOpen size={64} className="mb-4 opacity-50 stroke-1" />
+              <p className="text-xl font-light">No items available in this category.</p>
             </div>
           )}
         </div>

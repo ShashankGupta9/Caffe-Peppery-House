@@ -3,18 +3,29 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-const MENU_CONTEXT = `
-Peppery House Menu:
-HOT COFFEE: Espresso, Cappuccino, Latte, Flat White, Americano, Mocha
+import { supabase } from "./supabase";
 
-COLD COFFEE: Cold Brew, Iced Latte, Frappe, Caramel Macchiato (Iced), Vietnamese Iced Coffee, Nitro Cold Brew
+async function getMenuContext(): Promise<string> {
+  const { data, error } = await supabase.from('menu_items').select('category, name, is_available');
+  if (error || !data) {
+    return "Peppery House Menu (Default):\nCoffee, Espresso, Snacks, Desserts.";
+  }
+  
+  const categories: Record<string, string[]> = {};
+  data.forEach((item) => {
+    if (!categories[item.category]) categories[item.category] = [];
+    if (item.is_available) {
+      categories[item.category].push(item.name);
+    }
+  });
 
-SNACKS: Bruschetta, Cheese Toast, Veg Sandwich, Chicken Sandwich, Nachos, French Fries
-
-DESSERTS: Chocolate Lava Cake, Tiramisu, Cheesecake, Brownie, Panna Cotta, Waffles
-
-Price range: ₹200 to ₹400 per item.
-`;
+  let context = "Peppery House Menu (Only available items):\n";
+  for (const [cat, items] of Object.entries(categories)) {
+    context += `${cat.toUpperCase()}: ${items.join(", ")}\n`;
+  }
+  context += "\nPrice range: ₹200 to ₹400 per item.\n";
+  return context;
+}
 
 async function callGemini(prompt: string): Promise<string> {
   if (!genAI) {
@@ -32,19 +43,22 @@ async function callGemini(prompt: string): Promise<string> {
 }
 
 export async function getMoodRecommendation(energy: string, taste: string, temp: string): Promise<string> {
+  const menuContext = await getMenuContext();
   return callGemini(
-    `You are the AI barista at Peppery House café. Based on the customer's mood, recommend ONE drink from the menu.\n${MENU_CONTEXT}\nCustomer mood: Energy level: ${energy}, Taste preference: ${taste}, Temperature preference: ${temp}.\nRespond with ONLY the name of the drink in bold, followed by a short, simple, and punchy 1-sentence reason why.`
+    `You are the AI barista at Peppery House café. Based on the customer's mood, recommend ONE drink from the menu.\n${menuContext}\nCustomer mood: Energy level: ${energy}, Taste preference: ${taste}, Temperature preference: ${temp}.\nRespond with ONLY the name of the drink in bold, followed by a short, simple, and punchy 1-sentence reason why.`
   );
 }
 
 export async function getAIBaristaRecommendation(context: string): Promise<string> {
+  const menuContext = await getMenuContext();
   return callGemini(
-    `You are the AI Barista at Peppery House café. The customer described their situation: "${context}"\n${MENU_CONTEXT}\nRecommend ONLY 1 coffee and 1 food item. Start with their names in bold, followed by a single short, punchy sentence explaining why it fits.`
+    `You are the AI Barista at Peppery House café. The customer described their situation: "${context}"\n${menuContext}\nRecommend ONLY 1 coffee and 1 food item. Start with their names in bold, followed by a single short, punchy sentence explaining why it fits.`
   );
 }
 
 export async function getCoffeePairing(drink: string): Promise<string> {
+  const menuContext = await getMenuContext();
   return callGemini(
-    `You are the pairing expert at Peppery House café. The customer chose: ${drink}.\n${MENU_CONTEXT}\nRespond with ONLY 2 food items in bold. Under each, write exactly one short, simple sentence explaining the pairing.`
+    `You are the pairing expert at Peppery House café. The customer chose: ${drink}.\n${menuContext}\nRespond with ONLY 2 food items in bold. Under each, write exactly one short, simple sentence explaining the pairing.`
   );
 }

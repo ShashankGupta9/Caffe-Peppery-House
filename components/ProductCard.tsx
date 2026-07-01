@@ -31,6 +31,14 @@ export default function ProductCard({ item }: { item: MenuItem }) {
             Best Seller
           </div>
         )}
+
+        {!item.is_available && (
+          <div className="absolute inset-0 bg-surface/60 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="bg-surface-container-highest px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-red-500 border border-red-500/20">
+              Out of Stock
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -46,9 +54,14 @@ export default function ProductCard({ item }: { item: MenuItem }) {
           {qty === 0 ? (
             <button 
               onClick={() => addItem(item)}
-              className="w-full border border-raisin text-raisin hover:bg-raisin hover:text-white uppercase tracking-widest text-xs font-bold py-4 transition-colors"
+              disabled={!item.is_available}
+              className={`w-full border uppercase tracking-widest text-xs font-bold py-4 transition-colors ${
+                item.is_available 
+                  ? "border-raisin text-raisin hover:bg-raisin hover:text-white" 
+                  : "border-outline-variant text-outline-variant cursor-not-allowed bg-surface-container-low"
+              }`}
             >
-              Add to Cart
+              {item.is_available ? "Add to Cart" : "Unavailable"}
             </button>
           ) : (
             <div className="flex items-center justify-between border border-raisin p-1">
